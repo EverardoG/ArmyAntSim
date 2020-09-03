@@ -1,0 +1,41 @@
+#!/bin/bash
+
+app='../Release/Simulation_v2'
+nb_robot="-nb_r 150"
+max_robot="-mr 100"
+width="-w 8.0"
+window_x="-wx 1280"
+window_y="-wy 720"
+stability="40"
+counter=0
+echo "Bash version ${BASH_VERSION}..."
+
+# Create the result folder:
+NOW="$(date +'%Y-%m-%d_%H-%M')"
+PARAMETER="robot_distance_"
+path="../experiments/"$PARAMETER$NOW
+if [ ! -d $path ]
+then
+    echo $path
+    mkdir -p $path
+fi
+
+#launch the simulation
+while [ $counter -le 11 ]
+do
+  distance=$(echo 1.6 + 0.1*$counter | bc)
+  echo "Distance is $distance"
+  file_path="$path/robot_distance_$distance/"  #-fp
+  file_name="-fn "exp""
+
+  if [ ! -d $file_path ]
+  then
+      echo $file_path
+      mkdir -p $file_path
+      ./$app -vz false $nb_robot $file_name -fp $file_path -rd $distance -st $stability $nb_robot $max_robot $width $window_x $window_y
+  fi
+  counter=$(($counter + 1))
+done
+
+
+#./$app $nb_robot $file_name $file_path

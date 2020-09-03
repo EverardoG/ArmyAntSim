@@ -1,0 +1,36 @@
+#!/bin/bash
+
+app='../Release/Simulation_v2'
+nb_robot="-nb_r 1"
+counter=0
+echo "Bash version ${BASH_VERSION}..."
+
+# Create the result folder:
+NOW="$(date +'%Y-%m-%d_%H-%M')"
+PARAMETER="width_"
+path="../experiments/"$PARAMETER$NOW
+if [ ! -d $path ]
+then
+    echo $path
+    mkdir -p $path
+fi
+
+#launch the simulation
+while [ $counter -le 5 ]
+do
+  width=$(echo 10.0 + 0.5*$counter | bc)
+  echo "Width is $width"
+  file_path="$path/width_$width/"  #-fp
+  file_name="-fn "test""
+
+  if [ ! -d $file_path ]
+  then
+      echo $file_path
+      mkdir -p $file_path
+      ./$app -vz false $nb_robot $file_name -fp $file_path
+  fi
+  counter=$(($counter + 1))
+done
+
+
+#./$app $nb_robot $file_name $file_path

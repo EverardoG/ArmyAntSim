@@ -1,0 +1,27 @@
+#!/bin/bash
+path="../experiments/general_2018-12-01_12-57"
+dist="dist_3.0"
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+ListeRep="../experiments/general_2018-12-01_12-57/*"
+for filename in $ListeRep
+do
+  #-ls $filename
+  File="$filename/exp_result.txt"
+  Stable="0"
+  Width="$(sed -n 's/Width: \(.*\)/\1/p' < $File)"
+  Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+  dist="$(sed -n 's/Distance between robots: \(.*\)/\1/p' < $File)"
+  dist="$(cut -d' ' -f1 <<<$dist)"
+  Nb_r="$(sed -n 's/Number of robots in the bridge: \(.*\)/\1/p' < $File)"
+  if grep -q STABLE "$File";
+  then
+    Stable="1"
+  fi
+  echo "$Width; $Height; $dist; $Stable; $Nb_r"  >> $path/results/nb_robots.txt
+done

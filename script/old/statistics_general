@@ -1,0 +1,54 @@
+#!/bin/bash
+
+app='../Release/Simulation_v2'
+nb_robot="-nb_r 1"
+counter_w=0
+counter_h=0
+counter_d=0
+step="0.5"
+echo "Bash version ${BASH_VERSION}..."
+
+# Create the result folder:
+NOW="$(date +'%Y-%m-%d_%H-%M')"
+PARAMETER="general_"
+path="../experiments/"$PARAMETER$NOW
+if [ ! -d $path ]
+then
+    echo $path
+    mkdir -p $path
+fi
+
+#launch the simulation
+#loop on the width
+while [ $counter_w -le 30 ]
+do
+  width=$(echo 2.0 + $step*$counter_w | bc)
+  echo "Width is $width"
+  #loop on the height
+  while [ $counter_h -le 30 ]
+  do
+    height=$(echo 2.0 + $step*$counter_h | bc)
+    echo "Height is $height"
+    #loop on the distance
+    while [ $counter_d -le 9 ]
+    do
+      dist=$(echo 1.2 + 0.2*$counter_d | bc)
+      file_path="$path/width_$width"_height_"$height"_dist_"$dist/"  #-fp
+      file_name="-fn "exp""
+      if [ ! -d $file_path ]
+      then
+          echo $file_path
+          mkdir -p $file_path
+          ./$app -vz false $nb_robot $file_name -fp $file_path
+      fi
+      counter_d=$(($counter_d + 1))
+    done
+    counter_d=0
+    counter_h=$(($counter_h + 1))
+  done
+  counter_h=0
+  counter_w=$(($counter_w + 1))
+done
+
+
+#./$app $nb_robot $file_name $file_path

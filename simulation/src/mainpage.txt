@@ -1,0 +1,189 @@
+/** @mainpage Army ant simulation
+ *
+ * @section intro_sec Introduction
+ *
+ * The first objective of this simulator is to try to replicate army ant bridge formation with flipping biped robots.
+ * The simulator can be used to help determining the parameters that influence the bridge formation. It also allows to
+ * try several basic rules on the simulated robots quickly.
+ * The simulator is working in 2D and combines 2 main libraries:
+ * - The physics is handled by Box2D: https://box2d.org/about/
+ * - The graphics portion is done using SFML: https://www.sfml-dev.org
+ *
+ * However, both libraries does not use the same origin. Indeed. while the SFML (graphic) origin of the shapes is on the top left corner, the
+ * Box2D (physics) origin is set at the middle of the shape.\n (cf image below)
+ * @image html box2d_vs_sfml.png
+ * In addition, while in SFML all the positions are given in the world reference frame, the Box2D positions can be obtained either in the world reference frame our in their local
+ * reference frame (the shape from where the position is asked)\n
+ * More importantly, the Box2D dimensions are given in meters while the SFML ones are given in pixel: to go from one to the other the conversion has to be carefully done
+ * Thus, if it is possible to do all the transformation from the Box2D position to the SFML ones manually, it is usually easier to proceed as following:
+ * - Create the Box2D shape attached to a body
+ * - Get the position of its top left corner in the world reference frame from the local reference frame \n
+ * - Create the SFML corresponding shape at the position obtained previously\n
+ * BE CAREFUL: the dimension also has to be converted from meters to pixel when going from Box2D to SFML\n\n
+ * A concrete example to create a rectangle of width w and height h located at (posX, posY) is described below :
+ * @code
+ // Create the Box2D body (no fixture and shape attached yet)
+ b2BodyDef rectBodyDef;
+ rectBodyDef.position = b2Vec2(posX, posY);
+ rectBody = world->CreateBody(&rectBodyDef);
+
+ // Create the Box2D fixture and the rectangular shape that will be attached to the body
+ b2PolygonShape rectShape;
+ rectShape.SetAsBox(w/2,h/2);
+ b2FixtureDef rectFixtureDef;
+ rectFixtureDef.shape = &rectShape;
+ rectBody->CreateFixture(&rectFixtureDef);
+
+ // Get the top left corner position in the world frame
+ b2Vec2 topLeft = rect_box2D->GetWorldPoint(b2Vec2(-w/2,-h/2));
+
+ // Create the corresponding SFML shape
+ sf::RectangleShape rectShape_sfml(sf::Vector2f(w*m_to_pix, h*m_to_pix));
+ rectShape_sfml.setPosition(m_to_pix*topLeft.x,m_to_pix*topLeft.y);
+ * @endcode
+ *
+ *
+ * @section struct Code overview
+ *
+ * To launch a simulation with existing terrains and without modifying the intrinsic properties of the robots or the controller,
+ * only the main.cpp and Demo.cpp file should be modified.
+ * In addition, the simulator has not been implemented as a library and the main program is mixed with background source code. Thus it is better to start from
+ * the existing main file (and modifying it) than creating a new one. Indeed, the main file also implements the basic function to parse the arguments to launch a simulation
+ * and the help function. @note A future improvement of the code could be to transform the code so that it can be used as a library (with for eg a simulation class which would be initiated with the configuration parameters).
+ * However, it will require to find a way to give the terrain type as an entry parameter.
+ *
+ * @section param Configuration parameters
+ * The configuration parameters are defined in Config.h. There is several way for the user to specify the input parameters.
+ * An easy way to do so when just launching the simulation from the IDE (eg:eclipse) is to modify the default parameters value in
+ * default_parameters(config::sConfig& cfg) (in main.cpp).\n
+ * Another proper way to specify the configuration parameters is to write them in a config file and launch the simulation from the terminal
+ * specifying the configuration path : -cp <path>. An example of configuration file is given under examples/config_template.cfg.\n
+ * However, if one want to launch a batch of simulation with different values for the parameters. It might be easier to specify the parameters values
+ * individually with the correct entry command. The list of command can be obtain when launching the simulation from the terminal:
+ * "./Simulation_v2 -h " or "./Simulation_v2 --help" \n
+ * From the source code, the commands are summarized in help() (in main.cpp)
+ *
+ * @section terrain Create the terrain
+ * Different type of terrain are already implemented. \n
+ * The Default terrain is the one implemented in the parent class Terrain. It is a simple horizontal ground.\n
+ * The BoxTerrain is an horizontal rectangular box.\n
+ * The Vterrain is an horizontal ground with a V-shaped gap.\n
+ * The V2BLTerrain is similar to the Vterrain but the bottom of the V-shaped gap is truncated so that the width corresponds to 2 body-length.\n
+ * The Ramp is a single descending ramp (with a 90° angle).\n
+ * The VStepper is a more complex terrain where the obstacle is kind of a stepper but with sharper angle (angle < 90°).\n
+ *
+ * @subsection ex_terrain Existing terrain
+ * To select which terrain should be used in the simulation, it has to be specified in the Demo.h file: the type of the Demo::m_terrain member has to be adapted.
+ * Once the terrain has been chosen, the terrain Parameters (cf sTerrain struct in Config.h) can be adjusted using different methods described in  \ref param
+ *
+ * @subsection new_terrain Create new terrain
+ * If the creation of a new terrain is necessary, the new class should inherit from the global Terrain class. then the newly created .h file should be included in Demo.h.\n
+ * It might be necessary to re-implement the getScale() function depending on the parameters so that the whole terrain fits the window size.\n
+ *
+ *
+ * @section rob Create robots
+ * The robot flow is either by a given delay between the robots and initial position or a given distance between the robots and phase shift.
+ * The way the robots are created is controlled in the Demo.cpp file by choosing which function is used in Demo::demoLoop(). It can be either
+ * Demo::addRobotWithDelay() to control the robot creation with a given delay or Demo::addRobotWithDistance() to control the robot creation with a given distance.
+ * Then the distance, delay, phase, initial position are specified in the sSimulation \ref param. \n
+ *
+ * @subsection rob_del Custom robot delay distribution
+ * By default, the delay (or distance) between the robots follow a constant distribution (ie the distance/ delay is identical between every successive robots).
+ * In certain cases, it can be interesting to customize the distribution for example to study the introduction of perturbation. A way to
+ * do so without modifying to much the code structure is to update m_config.simulation.robot_delay (respectively m_config.simulation.robot_distance) directly in the Demo.cpp file
+ * at every timestep (either within a newly created function or directly in the Demo::demoLoop() one).\n \n
+ * Currently, two different delay distribution have been briefly implemented:
+ * - Gaussian delay: the gaussian delay is selected by setting gaussian_delay to true at the top of the Demo.cpp file.
+ * 
+ * @note Future work might require to properly implement a function which would allow to choose the delay distribution. Maybe, the creation of a robot delay class can be considered.
+ *
+ *
+ * @section rules Change the rules
+ * The rules can be adapted at several positions
+ * - The limit angle to avoid pushing is given as a \ref param and can be changed the usual way.
+ *
+ *
+ * @section design Design details
+ *
+ * - The minimum angle before which no gripper can be created (to avoid re-gripping the exact same position) can be changed in the RobotController Class
+ * by changing the value of the m_angle_min member
+ * - gripping area
+ * - max number of grippers per foot
+ * - mobility in bridge state
+ *
+ * @section ex Step by Step example
+ *
+ * As briefly explained in the \ref struct, currently, the simulation should be adapted by changing directly the main function of the main.cpp file and adapt the Demo.cpp / Demo.h files.
+ * The basic steps are described below
+ *
+ * In main.cpp :
+ * @code
+ int main(int argc, char* argv[])
+ {
+
+  // Declaration and initialization of the variables
+  bool config_file = false;
+  std::string config_file_path;
+  config::sConfig configParam;
+  default_parameters(configParam);
+
+  // The first step is to create the Box2D world (and choose the gravity)
+  b2Vec2 Gravity(0.f, 0.f);
+  b2World* world = new b2World(Gravity);
+
+  // The second step is to parse the arguments. This function is generic and should not be changed
+  for (int i = 1; i < argc; i++) { /* We will iterate over argv[] to get the parameters stored inside.
+                                       * Note that we're starting on 1 because we don't need to know the
+                                       * path of the program, which is stored in argv[0] */
+      if (std::string(argv[i]) == "-h" || std::string(argv[i]) == "--help") {
+        printf("tetetete \n");
+        help();
+        return 0;
+      }
+      else if (i + 1 != argc){
+ 			  // The first thing to check is whether a configuration file has been specified
+        if (std::string(argv[i]) == "-cp" || std::string(argv[i]) == "--configuration_path") {
+     		  // We know the next argument *should* be the filename:
+     		  config_file_path = std::string(argv[i + 1]);
+     		   config_file = true;
+     		    load_config(config_file_path, configParam);
+     		     break;
+        }
+        else{
+          parse_argument(argv, i, configParam);
+        }
+      }
+
+      if(configParam.terrain.v_angle > 0){
+        configParam.terrain.v_width = tan(configParam.terrain.v_angle)*2*configParam.terrain.v_height;
+      }
+  }
+
+  //The third step is to create the Demo, initiate it, launch it and write the results once it's finished
+  Demo myDemo(world, configParam);
+  myDemo.init();
+  myDemo.demoLoop();
+  myDemo.writeResultFile();
+
+  return 0;
+ }
+ * @endcode
+ *
+ * In Demo.h: change the terrain type
+ * @code
+ BoxTerrain m_terrain; //Terrain used to do the simulation, the object can be changed to either: Terrain, BoxTerrain, Vterrain, V2BLTerrain, VStepper
+ * @endcode
+ *
+ * In Demo.cpp: choose how the robots are created in the Demo::demoLoop() : either with a given distance or a given delay in the main demoLoop.
+ * Be careful, you have to change at two distinct positions: in the first part of the loop when the visualization is activated and in the second part of the loop
+ * when the visualization is deactivated
+ * @code
+          //This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
+ 					if(!addRobotWithDelay()){
+ 						m_stacking = true;
+ 						printf("robot stacking \n");
+ 	//					m_bridgeFile.close();
+ 						continue;
+ 					}
+ * @endcode
+ */

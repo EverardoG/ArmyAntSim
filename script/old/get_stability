@@ -1,0 +1,29 @@
+#!/bin/bash
+path="../experiments/general_2018-12-13_16-35"
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+for filename in $path/*
+do
+  #-ls $filename
+  File="$filename/exp_result.txt"
+  if [ -e $File ]
+  then
+    Name=$(basename $filename)
+    Angle=$(echo $Name | awk -F'[_]' '{print $2}')
+    echo "Angle is $Angle"
+    Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+    Dist="$(sed -n 's/Distance between robots: \(.*\)/\1/p' < $File)"
+    Dist="$(cut -d' ' -f1 <<<$Dist)"
+    Stable="0"
+    if grep -q STABLE "$File";
+    then
+      Stable="1"
+    fi
+    echo "$Angle; $Height; $Dist; $Stable" >> $path/results/stable.txt
+  fi
+done

@@ -1,0 +1,83 @@
+#!/bin/bash
+
+path="../experiments/limi_angle/delay_025_angle_lim_078_2019-03-01_08-40"
+export PATH=/Applications/MATLAB_R2018b.app/bin:$PATH
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+for filename in $path/*
+do
+  File="$filename/exp_result.txt"
+  if [ -e $File ]
+  then
+    bridge_file="'$filename/exp_bridge.txt'"
+    #-ls $filename
+    #get v coordinates:
+    top_left="$(sed -n 's/top left corner: \(.*\)/\1/p' < $File)"
+    top_leftX=$(echo $top_left | awk -F'[,]' '{print $1}')
+    top_leftY=$(echo $top_left | awk -F'[,]' '{print $2}')
+
+    top_right="$(sed -n 's/top right corner: \(.*\)/\1/p' < $File)"
+    top_rightX=$(echo $top_right | awk -F'[,]' '{print $1}')
+    top_rightY=$(echo $top_right | awk -F'[,]' '{print $2}')
+
+    bottom="$(sed -n 's/bottom: \(.*\)/\1/p' < $File)"
+    bottomX=$(echo $bottom | awk -F'[,]' '{print $1}')
+    bottomY=$(echo $bottom | awk -F'[,]' '{print $2}')
+
+    t_stab="$(sed -n 's/Bridge formation step duration: \(.*\)/\1/p' < $File)"
+    t_stab=$(echo $t_stab | awk -F'[ ]' '{print $1}')
+    echo "t_stab is $t_stab"
+
+    dist="$(sed -n 's/Distance between robots: \(.*\)/\1/p' < $File)"
+    dist=$(echo $dist | awk -F'[ ]' '{print $1}')
+
+    phase="$(sed -n 's/Phase shift between robots: \(.*\)/\1/p' < $File)"
+    phase=$(echo $phase | awk -F'[ ]' '{print $1}')
+
+    Stable="0"
+    Dissol="0"
+    if grep -q DISSOLVED "$File";
+    then
+      Dissol="1"
+      Nb_r_diss="$(sed -n 's/Number of robots blocked: \(.*\)/\1/p' < $File)"
+    else
+      Nb_r_diss="$(sed -n 's/Number of robots in the bridge: \(.*\)/\1/p' < $File)"
+      Nb_r_diss=$(echo $Nb_r_diss | awk -F'[  ]' '{print $2}')
+      echo "Nb_r_diss is $Nb_r_diss"
+    fi
+
+    Name=$(basename $filename)
+    Angle=$(echo $Name | awk -F'[_]' '{print $2}')
+    echo "Angle is $Angle"
+    #delay=$(echo $Name | awk -F'[_]' '{print $6}')
+    Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+  #  dist="$(sed -n 's/Distance between robots: \(.*\)/\1/p' < $File)"
+  #  dist="$(cut -d' ' -f1 <<<$dist)"
+    delay=$(echo $Name | awk -F'[_]' '{print $6}')
+    init=$(echo $Name | awk -F'[_]' '{print $8}')
+
+    if grep -q 'No bridge has formed' "$File"
+    then
+      echo "$Angle; $Height; $delay; $dist; $phase; $Stable; 0.0; $bottomY; 0.0; 0.0; 0.0; $Dissol; $Nb_r_diss; $init "  >> $path/results/length.txt
+    else
+      matlab -nodesktop -nosplash -r "getBridgeLength($bridge_file, $top_leftX, $top_leftY, $top_rightX, $top_rightY, $bottomX , $bottomY, $t_stab);exit" > length.txt
+      length="$(sed -n 's/length = \(.*\)/\1/p' < "length.txt")"
+      dl="$(sed -n 's/d_left = \(.*\)/\1/p' < "length.txt")"
+      dr="$(sed -n 's/d_right = \(.*\)/\1/p' < "length.txt")"
+      dm="$(sed -n 's/d_mean = \(.*\)/\1/p' < "length.txt")"
+      echo "Length is $length"
+      #eval $length
+      if grep -q STABLE "$File";
+      then
+        Stable="1"
+      fi
+      echo "$Angle; $Height; $delay; $dist; $phase; $Stable; $length; $bottomY; $dr; $dl; $dm; $Dissol; $Nb_r_diss; $init"  >> $path/results/length.txt
+      #echo "$Angle; $Height; $dist; $Stable; $length ; $bottomY; $dr; $dl; $dm"  >> $path/results/length.txt
+    fi
+  fi
+done

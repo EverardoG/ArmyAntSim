@@ -1,0 +1,32 @@
+#!/bin/bash
+path="../experiments/general_delay_2019-01-16_13-41"
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+for filename in $path/*
+do
+  File="$filename/exp_result.txt"
+  if [ -e $File ]
+  then
+    #-ls $filename
+    Stable="0"
+    Name=$(basename $filename)
+    Angle=$(echo $Name | awk -F'[_]' '{print $2}')
+    echo "Angle is $Angle"
+    Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+    delay=$(echo $Name | awk -F'[_]' '{print $6}')
+    echo "Delay is $delay"
+#    dist="$(cut -d' ' -f1 <<<$dist)"
+    Nb_r="$(sed -n 's/Number of robots in the bridge: \(.*\)/\1/p' < $File)"
+    if grep -q STABLE "$File";
+    then
+      Stable="1"
+    fi
+    echo "$Angle; $Height; $delay; $Stable; $Nb_r"  >> $path/results/nb_robots.txt
+#    echo "$Angle; $Height; $dist; $Stable; $Nb_r"  >> $path/results/nb_robots.txt
+  fi
+done

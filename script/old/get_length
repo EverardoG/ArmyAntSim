@@ -1,0 +1,25 @@
+#!/bin/bash
+path="../experiments/general_2018-12-01_12-57"
+dist="dist_3.0"
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+ListeRep="$(find $path -name '*dist_3.0*')"
+for filename in ${ListeRep}
+do
+  #-ls $filename
+  File="$filename/exp_result.txt"
+  Stable="0"
+  if grep -q STABLE "$File";
+  then
+    Width="$(sed -n 's/Width: \(.*\)/\1/p' < $File)"
+    Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+    l_i="$(sed -n 's/total V path length: \(.*\)/\1/p' < $File)"
+    l_b="$(sed -n 's/New path length: \(.*\)/\1/p' < $File)"
+  fi
+  echo "$Width; $Height; $l_i; $l_b" >> $path/results/length_$dist.txt
+done

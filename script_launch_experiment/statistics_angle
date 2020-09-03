@@ -1,0 +1,61 @@
+#!/bin/bash
+
+app='../Release/Simulation_v2'
+window_x="-wx 1280"
+window_y="-wy 720"
+nb_robot="-nb_r 250"
+max_robot="-mr 100"
+pushing="-pt 1"
+init_x="-rx 5.2"
+phase="-rp 180"
+angle_lim="-a 3.0"
+counter_a=0
+counter_h=0
+counter_d=0
+step="2"
+bridge_duration="-t 200"
+diss_duration="-td 200"
+echo "Bash version ${BASH_VERSION}..."
+
+# Create the result folder:
+NOW="$(date +'%Y-%m-%d_%H-%M')"
+PARAMETER="delay_gauss_025_2BL_"
+path="../experiments/"$PARAMETER$NOW
+if [ ! -d $path ]
+then
+    echo $path
+    mkdir -p $path
+fi
+
+#launch the simulation
+
+angle="30"
+
+    #loop on the distance
+while [ $counter_a -le 17 ]
+do
+  angle=$(echo 7.5 + 2.5*$counter_a | bc)
+  echo "Angle is $angle"
+  height="8"
+  echo "Height is $height"
+  #loop on the distance
+  while [ $counter_d -le 5 ]
+  do
+    dist=$(echo 2.25 + 1*$counter_d | bc)
+    file_path="$path/angle_$angle"_height_"$height"_delay_"$dist/"  #-fp
+    file_name="-fn "exp""
+    if [ ! -d $file_path ]
+    then
+        echo $file_path
+        mkdir -p $file_path
+        ./$app -vz false $window_x $window_y $file_name -fp $file_path $nb_robot $max_robot \
+        -va $angle --v_height $height -rt $dist $pushing $bridge_duration $diss_duration $init_x
+    fi
+    counter_d=$(($counter_d + 1))
+  done
+  counter_d=0
+  counter_a=$(($counter_a + 1))
+done
+
+
+#./$app $nb_robot $file_name $file_path

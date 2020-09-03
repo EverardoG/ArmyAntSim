@@ -1,0 +1,26 @@
+#!/bin/bash
+path="../experiments/general_2018-12-10_17-30"
+
+if [ ! -d "$path/results" ]
+then
+    echo "$path/results"
+    mkdir -p "$path/results"
+fi
+
+ListeRep="$(find $path -name '*dist_2.0*')"
+for filename in ${ListeRep}
+do
+  #-ls $filename
+  File="$filename/exp_result.txt"
+  if [ -e $File ]
+  then
+    Width="$(sed -n 's/Width: \(.*\)/\1/p' < $File)"
+    Height="$(sed -n 's/Height: \(.*\)/\1/p' < $File)"
+    Stable="0"
+    if grep -q STABLE "$File";
+    then
+      Stable="1"
+    fi
+    echo "$Width; $Height; $Stable" >> $path/results/stable_dist_2.0.txt
+  fi
+done
