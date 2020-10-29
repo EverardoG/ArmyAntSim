@@ -150,7 +150,8 @@ private:
 //	b2Vec2 m_gravity = b2Vec2(0.f, 0.f);
 	RobotController m_robotController; //Robot controller containing the vector of the robots
 	double m_to_px; //Scale to do the conversion from real dimensions (m) to simulated ones (pixels). Usually obtained from the terrain
-	BoxTerrain m_terrain; //Terrain used to do the simulation, the object can be changed to either: Terrain, BoxTerrain, Vterrain, V2BLTerrain, VStepper
+	// BoxTerrain m_terrain; //Terrain used to do the simulation, the object can be changed to either: Terrain, BoxTerrain, Vterrain, V2BLTerrain, VStepper
+	Vterrain m_terrain;
 	MyContactListener_v2* myContactListener; //Contact listener
 	double m_it = 0; //Iteration counter used to create the robots with a given delay between them
 	int m_nbRobots = 0; //Number of robots created

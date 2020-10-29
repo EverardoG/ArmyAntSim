@@ -91,7 +91,7 @@ void Demo::init(){
 }
 
 //Main demoLoop called in the main file: The demoLoop is structured in two cases: if the visualization is activated or not.
-Both cases are then almost identical apart from the simulation part.
+// Both cases are then almost identical apart from the simulation part.
 void Demo::demoLoop(){
 
  // Case 1: the visualization is activated. It can be activated/deactivated by giving the right argument to the function (\ref param)
