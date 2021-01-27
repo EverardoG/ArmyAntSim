@@ -32,6 +32,7 @@
 
 #include <thread>
 #include <math.h>
+#include <iostream>
 
 bool distance_from_bottom = false;
 
@@ -48,25 +49,53 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	window.setFramerateLimit(FPS);
 	world->SetGravity(b2Vec2(0,m_config.simulation.gravity));
 
-	m_terrain.create(m_world, window, m_config.terrain, m_config.window.WINDOW_X_PX, m_config.robot.body_length );
-	m_terrain.createBody(m_world);
-	m_terrain.drawBody(window);
-	m_to_px = m_terrain.getScale();
+	std::cout << "Terrain type: " << m_config.terrain.type << std::endl;
+
+	// TODO: This is where terrain type will be set
+	if (m_config.terrain.type == "v_terrain") {
+		m_terrain = new Vterrain;
+	}
+	else if (m_config.terrain.type == "v2bl_terrain") {
+		m_terrain = new V2BLTerrain;
+	}
+	else if (m_config.terrain.type == "ramp") {
+		m_terrain = new Ramp;
+	}
+	else if (m_config.terrain.type == "box") {
+		m_terrain = new BoxTerrain;
+	}
+	else if (m_config.terrain.type == "v_stepper") {
+		m_terrain = new VStepper;
+	}
+
+	// Vterrain m_terrain;
+	// this successfully changes the terrain type but for some reason it doesn't render properly
+	// seems to have to do with some variables (such as m_M_TO_PX) not being defined properly
+	// seems that m_M_TO_PX is defined properly on the first loop, but becomes 0 on all subsequent loops
+	// That's probably because this m_terrain is created locally and doesn't replace the actual m_terrain attribute
+	// Hence, it works fine the first time, but after that the simulation defaults to the m_terrain defined in Demo.h
+
+	std::cout << "m_config.window.WINDOW_X_PX: " << m_config.window.WINDOW_X_PX << std::endl;
+
+	m_terrain->create(m_world, window, m_config.terrain, m_config.window.WINDOW_X_PX, m_config.robot.body_length );
+	m_terrain->createBody(m_world);
+	m_terrain->drawBody(window);
+	m_to_px = m_terrain->getScale();
 
 	/**Initial x position of the robot in the world*/
 	if(distance_from_bottom){
-		float V_slope = m_terrain.getVLength()/2;
-		m_config.simulation.robot_initial_posX = m_terrain.getTopLeftCorner().x + V_slope - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
+		float V_slope = m_terrain->getVLength()/2;
+		m_config.simulation.robot_initial_posX = m_terrain->getTopLeftCorner().x + V_slope - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
 	}
-	else if(!(m_terrain.getType()==DEFAULT)){
-		m_config.simulation.robot_initial_posX = m_terrain.getTopLeftCorner().x - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
+	else if(!(m_terrain->getType()==DEFAULT)){
+		m_config.simulation.robot_initial_posX = m_terrain->getTopLeftCorner().x - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
 	}
 
 	/**Initial y position of the robot*/
 	m_config.robot.wheel_radius = (m_config.robot.body_length - 0.02)/4;
-	m_config.simulation.robot_initial_posY = m_terrain.getTopLeftCorner().y - m_config.robot.wheel_radius;
+	m_config.simulation.robot_initial_posY = m_terrain->getTopLeftCorner().y - m_config.robot.wheel_radius;
 
-	m_robotController.create(m_config.controller, m_config.robot, m_terrain.getBody());
+	m_robotController.create(m_config.controller, m_config.robot, m_terrain->getBody());
 	m_robotController.setScale(m_to_px);
 	myContactListener = new MyContactListener_v2(m_robotController);
 
@@ -133,7 +162,8 @@ void Demo::demoLoop(){
 
 				 // Drawing part (on SFML window)
 				 window.clear(sf::Color::White);
-				 m_terrain.drawBody(window);
+				 std::cout << "Should be drawing here" << std::endl;
+				 m_terrain->drawBody(window);
 				 m_robotController.drawRobots(window, m_to_px);
 				 window.display();
 
@@ -163,7 +193,7 @@ void Demo::demoLoop(){
 
 				 // Drawing part (on SFML window)
 				 window.clear(sf::Color::White);
-				 m_terrain.drawBody(window);
+				 m_terrain->drawBody(window);
 				 m_robotController.drawRobots(window, m_to_px);
 				 window.display();
 
@@ -380,7 +410,7 @@ double Demo::getBridgeHeight(){
 		}
 	}
 
-	double y_bottom_bridge = m_terrain.getBottom().y;
+	double y_bottom_bridge = m_terrain->getBottom().y;
 
 	y_start = abs(y_bottom_bridge - y_start)/m_config.robot.body_length;
 
@@ -434,9 +464,9 @@ double Demo::getNewPathLength(){
 	m_startP.Set(x_start, y_start);
 	m_endP.Set(x_end, y_end);
 
-	l = distance(m_terrain.getTopLeftCorner().x, m_terrain.getTopLeftCorner().y, x_start, y_start);
+	l = distance(m_terrain->getTopLeftCorner().x, m_terrain->getTopLeftCorner().y, x_start, y_start);
 	l+= distance(x_end, y_end, x_start, y_start);
-	l+= distance(m_terrain.getTopRightCorner().x, m_terrain.getTopRightCorner().y, x_end, y_end);
+	l+= distance(m_terrain->getTopRightCorner().x, m_terrain->getTopRightCorner().y, x_end, y_end);
 
 	l = l/m_config.robot.body_length;
 	return l;
@@ -451,16 +481,16 @@ void Demo::writeResultFile(){
 	double t;
 
 	/** Terrain parameters */
-	if(m_terrain.getType()==V_TERRAIN){
+	if(m_terrain->getType()==V_TERRAIN){
 		m_logFile << "V-terrain parameters: \n";
 		m_logFile << "	Width: "<< m_config.terrain.v_width << "\n";
 		m_logFile << "	Height: "<< m_config.terrain.v_height << "\n";
 		m_logFile << "	Angle: "<< m_config.terrain.v_angle*RAD_TO_DEG << " deg\n";
-		double l = m_terrain.getVLength()/m_config.robot.body_length;
+		double l = m_terrain->getVLength()/m_config.robot.body_length;
 		m_logFile << "	total V path length: "<< std::to_string(l) << "\n \n";
-		m_logFile << "	top right corner: "<< std::to_string(m_terrain.getTopRightCorner().x) << ", "<< std::to_string( m_terrain.getTopRightCorner().y)<< "\n";
-		m_logFile << "	top left corner: "<< std::to_string(m_terrain.getTopLeftCorner().x) << ", "<< std::to_string( m_terrain.getTopLeftCorner().y)<< "\n";
-		m_logFile << "	bottom: "<< std::to_string(m_terrain.getBottom().x) << ", "<< std::to_string(m_terrain.getBottom().y)<< "\n \n";
+		m_logFile << "	top right corner: "<< std::to_string(m_terrain->getTopRightCorner().x) << ", "<< std::to_string( m_terrain->getTopRightCorner().y)<< "\n";
+		m_logFile << "	top left corner: "<< std::to_string(m_terrain->getTopLeftCorner().x) << ", "<< std::to_string( m_terrain->getTopLeftCorner().y)<< "\n";
+		m_logFile << "	bottom: "<< std::to_string(m_terrain->getBottom().x) << ", "<< std::to_string(m_terrain->getBottom().y)<< "\n \n";
 	}
 
 
@@ -478,7 +508,7 @@ void Demo::writeResultFile(){
 	m_logFile << "	Distance between robots: "<< std::to_string(m_config.simulation.robot_distance) << " body length\n";
 	m_logFile << "	Phase shift between robots: "<< std::to_string(m_config.simulation.robot_phase) << " rad\n";
 	m_logFile << "	Initial x position of the first robot: "<< std::to_string(m_config.simulation.robot_initial_posX) << " m\n";
-	m_logFile << "	Initial distance of the robot from the edge of the V: "<< std::to_string((m_terrain.getTopLeftCorner().x-m_config.simulation.robot_initial_posX)/m_config.robot.body_length) << " m\n";
+	m_logFile << "	Initial distance of the robot from the edge of the V: "<< std::to_string((m_terrain->getTopLeftCorner().x-m_config.simulation.robot_initial_posX)/m_config.robot.body_length) << " m\n";
 	m_logFile << "	Bridge formation step duration: "<< std::to_string(m_elapsedTimeBridge) << " s\n\n";
 	m_logFile << "	Bridge dissolution step duration: "<< std::to_string(m_elapsedTimeDissolution) << " s\n\n";
 	m_logFile << "	Simulation duration: "<< std::to_string(m_elapsedTime) << " s\n\n";
@@ -500,7 +530,7 @@ void Demo::writeResultFile(){
 	/** Bridge parameters */
 	if(m_nbRobotsInBridge >0){
 		m_logFile << "Bridge parameters: \n";
-		if(m_terrain.getType()==V_TERRAIN){
+		if(m_terrain->getType()==V_TERRAIN){
 			m_logFile << "	New path length: "<< std::to_string(m_length) << "\n";
 			m_logFile << "	Bridge height: "<< std::to_string(m_height) << "\n";
 			m_logFile << "	Bridge start: "<< std::to_string(m_startP.x) << ", "<< std::to_string(m_startP.y)<< "\n";
@@ -599,7 +629,7 @@ void Demo::takeScreenshot(bool draw, int step){
 
 	if(draw){
 		window.clear(sf::Color::White);
-		m_terrain.drawBody(window);
+		m_terrain->drawBody(window);
 		m_robotController.drawRobots(window, m_to_px);
 	}
 

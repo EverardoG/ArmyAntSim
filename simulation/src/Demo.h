@@ -151,7 +151,18 @@ private:
 	RobotController m_robotController; //Robot controller containing the vector of the robots
 	double m_to_px; //Scale to do the conversion from real dimensions (m) to simulated ones (pixels). Usually obtained from the terrain
 	// BoxTerrain m_terrain; //Terrain used to do the simulation, the object can be changed to either: Terrain, BoxTerrain, Vterrain, V2BLTerrain, VStepper
-	Vterrain m_terrain;
+	// TODO: Make this terrain somehow templated or otherwise modular
+	// Vterrain m_terrain;
+	Terrain* m_terrain = new Terrain;
+	// maybe make this the Terrain type
+	//     and then make the terrain types use meta-programming instead of inheritance to switch between different terrain initializations
+	//     so there's all the terrain functions, and they each take in a type that you can specify when calling those methods
+	//     and that's where the meta-programming happens. It will call the function of that specific terrain type rather than a standard method
+	// could instead:
+	//    have a super class that is Terrain (as it is now)
+	//    and have the type used in the simulation be a Terrain type when it is declared
+	//    and have it be set equal to a specific terrain type when it's actually defined. And so long as the functions are all the same, then all should be fine.
+	//    This seems far easier and like it fits nicely with what already exists
 	MyContactListener_v2* myContactListener; //Contact listener
 	double m_it = 0; //Iteration counter used to create the robots with a given delay between them
 	int m_nbRobots = 0; //Number of robots created
