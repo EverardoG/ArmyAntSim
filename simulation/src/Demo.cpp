@@ -141,6 +141,7 @@ void Demo::demoLoop(){
 					 {
 							 sf::Image Screen = window.capture();
 							 std::string name = "screenshot_" + std::to_string(m_elapsedTime) + ".jpg";
+							 std::cout << "[demoLoop] About to save image " << name << std::endl;
 							 Screen.saveToFile(name);
 					 }
 				 }
@@ -162,7 +163,6 @@ void Demo::demoLoop(){
 
 				 // Drawing part (on SFML window)
 				 window.clear(sf::Color::White);
-				 std::cout << "Should be drawing here" << std::endl;
 				 m_terrain->drawBody(window);
 				 m_robotController.drawRobots(window, m_to_px);
 				 window.display();
@@ -636,13 +636,16 @@ void Demo::takeScreenshot(bool draw, int step){
 	if(step==1){
 	    sf::Image Screen = window.capture();
 	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_formation_" + std::to_string(m_currentIt) + ".jpg";
-	    Screen.saveToFile(filename);
+	    std::cout << "[Step 1] About to save image " << filename << std::endl;
+		// Screen.saveToFile("whatever.jpg");
+		Screen.saveToFile(filename);
 	}
 
 	else if(step==2){
 	    sf::Image Screen = window.capture();
 	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_dissolution_" + std::to_string(m_currentIt) + ".jpg";
-	    Screen.saveToFile(filename);
+	    std::cout << "[Step 2] About to save image " << filename << std::endl;
+		Screen.saveToFile(filename);
 	}
 
 }

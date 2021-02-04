@@ -87,9 +87,7 @@ void Vterrain::createBody(b2World* world){
 }
 
 void Vterrain::drawBody(sf::RenderWindow& window){
-	std::cout << "Hello I am drawing the body" << std::endl;
 	sf::VertexArray lines(sf::LinesStrip, 5);
-	std::cout << "m_posY: " << m_posY << " | m_M_TO_PX: " << m_M_TO_PX << std::endl;
 	// m_M_TO_PX is 0 when I declare "Vterrain m_terrain" in Demo::Demo() in Demo.cpp
 	// it is non-zero otherwise
 	lines[0].position = sf::Vector2f(0, m_posY*m_M_TO_PX);

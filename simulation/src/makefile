@@ -18,6 +18,6 @@ LIBS=-lsfml-graphics -lsfml-window -lsfml-system
 # Tell us where the headers for the CPP files we're compiling are
 IDIR = .
 
-# Build the project
-make:
+# Build run_sim
+run_sim:
 	$(CC) -o run_sim -w *.cpp $(BOX2D_CPP) $(CFLAGS) $(LIBS)
