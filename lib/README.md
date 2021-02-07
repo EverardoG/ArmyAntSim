@@ -1,0 +1,3 @@
+Note: The version of Box2D included in this `lib` folder is the one that we know for absolute certain is compatible with the `ArmyAntSim`. Cmake builds the Box2D library from this source code for use with the `ArmyAntSim`
+
+However, cmake does not use the files included in the `SFML` folder. The `SFML` folder includes the dynamic library files necessary to build this project with SFML on a Mac. On Linux, the `SFML` library is built and installed separately onto the machine, and its directory does not need to be manually specified to the C++ build system.
