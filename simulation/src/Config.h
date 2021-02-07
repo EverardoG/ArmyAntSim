@@ -28,6 +28,7 @@ namespace config
 *
 */
 struct sTerrain{
+	std::string type;
 	/**It is either the distance before the eentrance of the obstcle or 1/3 of the length of the ground in the default terrain*/
 	double runaway;
 	/** */

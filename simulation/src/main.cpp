@@ -108,6 +108,11 @@ void default_parameters(config::sConfig& cfg){
 void parse_argument(char* argv[], int i, config::sConfig& cfg){
 
         	// Terrain parameters
+			if (std::string(argv[i]) == "-y" || std::string(argv[i]) == "--terrain_type") {
+            		cfg.terrain.type = std::string(argv[i + 1]);
+					std::cout << "Parsed terrain type" << std::endl;
+					std::cout << "Terrain type is: " << cfg.terrain.type << std::endl;
+            }
             if (std::string(argv[i]) == "-r" || std::string(argv[i]) == "--terrain_runaway") {
             		cfg.terrain.runaway = atof(argv[i + 1]);
             }
@@ -211,7 +216,7 @@ void parse_argument(char* argv[], int i, config::sConfig& cfg){
 }
 
 
-/** Function called when launch argument requires help. Print all the possible commands 
+/** Function called when launch argument requires help. Print all the possible commands
 */
 void help(){
 	std::cout << "Launch a simulation for the ant bridge formation" << std::endl;
