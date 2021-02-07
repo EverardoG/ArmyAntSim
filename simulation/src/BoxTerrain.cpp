@@ -1,5 +1,5 @@
 /*
- * World.cpp
+ * BoxTerrain.cpp
  *
  *  Created on: 27 sept. 2018
  *      Author: lucie

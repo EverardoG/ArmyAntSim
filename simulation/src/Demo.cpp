@@ -67,6 +67,9 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "v_stepper") {
 		m_terrain = new VStepper;
 	}
+	else if (m_config.terrain.type == "cliff") {
+		m_terrain = new CliffTerrain;
+	}
 
 	// Vterrain m_terrain;
 	// this successfully changes the terrain type but for some reason it doesn't render properly

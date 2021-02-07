@@ -23,6 +23,7 @@
 #include "V2BLTerrain.h"
 #include "Ramp.h"
 #include "VStepper.h"
+#include "CliffTerrain.h"
 #include <iostream>
 #include <fstream>
 #include "Config.h"

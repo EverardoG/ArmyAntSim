@@ -1,20 +1,32 @@
 /*
- * BoxTerrain.h
+ * CliffTerrain.h
  *
- *  Created on: 27 sept. 2018
- *      Author: lucie
+ *  Created on: 6 feb. 2021
+ *      Author: ever
  */
 
-#ifndef BOXTERRAIN_H_
-#define BOXTERRAIN_H_
+#ifndef CLIFFTERRAIN_H_
+#define CLIFFTERRAIN_H_
 
 #include "Terrain.h"
+#include <iostream>
 
-class BoxTerrain: public Terrain {
+// Point represents a point in 2D space on the simulation as a b2vec
+using Point = b2Vec2;
+
+// Polygon is a collection of points that form a polygon when connected
+// Like a "Connect the dots" puzzle where the dot coordinates are lined up
+// in order in a std::vector
+using Polygon = std::vector<Point>;
+
+// AllPolygons holds all the polygons on a particular terrain in no particular order
+using AllPolygons = std::vector<Polygon>;
+
+class CliffTerrain: public Terrain {
 public:
-	BoxTerrain();
-	BoxTerrain(	b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
-	virtual ~BoxTerrain();
+	CliffTerrain();
+	CliffTerrain(	b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
+	virtual ~CliffTerrain();
 
 	void create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
 
@@ -32,6 +44,7 @@ public:
 private:
 	int m_window_x=0;
 	int m_window_y=0;
+	AllPolygons allPolygons;
 };
 
-#endif /* BOXTERRAIN_H_ */
+#endif /* CLIFFTERRAIN_H_ */
