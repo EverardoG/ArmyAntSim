@@ -24,6 +24,9 @@ Vterrain::~Vterrain() {
 
 void Vterrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
 	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
+	std::cout << "WINDOW_X_PX : " << WINDOW_X_PX << std::endl;
+	std::cout << "m_runaway : " << m_runaway << std::endl;
+	std::cout << "m_width : " << m_width << std::endl;
 	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway+m_width);
 	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
 }
