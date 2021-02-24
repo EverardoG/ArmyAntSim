@@ -67,6 +67,9 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "v_stepper") {
 		m_terrain = new VStepper;
 	}
+	else if (m_config.terrain.type == "cliff") {
+		m_terrain = new CliffTerrain;
+	}
 
 	// Vterrain m_terrain;
 	// this successfully changes the terrain type but for some reason it doesn't render properly
@@ -86,14 +89,27 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	if(distance_from_bottom){
 		float V_slope = m_terrain->getVLength()/2;
 		m_config.simulation.robot_initial_posX = m_terrain->getTopLeftCorner().x + V_slope - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
+		std::cout << "V_slope x position" << std::endl;
 	}
 	else if(!(m_terrain->getType()==DEFAULT)){
+		// std::cout << "m_terrain->getTopLeftCorner().x | " << m_terrain->getTopLeftCorner().x << std::endl;
+		// std::cout << "m_config.simulation.robot_initial_posX | " << m_config.simulation.robot_initial_posX << std::endl;
+		// std::cout << "m_config.robot.body_length | " << m_config.robot.body_length << std::endl;
+
 		m_config.simulation.robot_initial_posX = m_terrain->getTopLeftCorner().x - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
+		// std::cout << "m_config.simulation.robot_initial_posX | " << m_config.simulation.robot_initial_posX << std::endl;
+		// std::cout << "DEFAULT x position" << std::endl;
+	}
+	else
+	{
+		// std::cout << "Else x position" << std::endl;
 	}
 
 	/**Initial y position of the robot*/
 	m_config.robot.wheel_radius = (m_config.robot.body_length - 0.02)/4;
-	m_config.simulation.robot_initial_posY = m_terrain->getTopLeftCorner().y - m_config.robot.wheel_radius;
+	m_config.simulation.robot_initial_posY = m_terrain->getTopLeftCorner().y - m_config.robot.wheel_radius - m_config.simulation.robot_initial_posY * m_config.robot.body_length;
+
+	// TODO: Parse the -ry that is passed into the simulation
 
 	m_robotController.create(m_config.controller, m_config.robot, m_terrain->getBody());
 	m_robotController.setScale(m_to_px);
