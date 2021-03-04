@@ -2,7 +2,7 @@
 This github contains the c++ implementation of a simulator for soft robots similar to the [Flippy robot](https://ssr.seas.harvard.edu/publications/flippy-soft-autonomous-climber-simple-sensing-and-control) to investigate/reproduce army ant bridge behavior developped in the context of a 6-months master thesis ([Report](../../blob/master/Report/Master_Thesis_HOUEL.pdf))
 
 ***
-Installation guide : [Installation](../../wiki/Installation-guide)
+Installation guide : [Installation](../../wiki/Installation)
 
 Documentation : [Docs](https://lustupuce.github.io/Army_ant_simulation/)
 
