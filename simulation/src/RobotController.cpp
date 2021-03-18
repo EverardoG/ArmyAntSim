@@ -433,6 +433,39 @@ double RobotController::getDissolutionTime(){
 	return m_dissolutionTime;
 }
 
+// Set speed for all robots
+void RobotController::SetGlobalSpeed(double desired_speed){
+	for (int i=0; i<m_robotVector.size(); i++){
+		m_robotVector[i]->setSpeed(desired_speed);
+	}
+}
+
+// float RobotController::calculateSpeed( robot, goal_pos )
+// or goal_pos could be an attribute of RobotController
+// and it's public and it's defined in config and set by Demo.cpp
+// also option for dynamic speed vs fixed speed in config
+// maybe change delay instead of speed (this is more portable for real robot)
+
+double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp){
+	// Calculates the speed for every robot so that the robots move toward the desired goal
+	for (int i=0; i<m_robotVector.size(); i++){
+		float desired_x = m_goal_pos.x;
+		float error_x = desired_x - m_robotVector[i]->getPosition().x;
+		float desired_speed = 0.4 * log(error_x) + 2*PI;
+		if(isnan(desired_speed)){
+			desired_speed = 0.1;
+		}
+
+		float desired_y = m_goal_pos.y;
+		if(m_robotVector[i]->getPosition().y < desired_y){
+			desired_speed = m_robotParam.speed;
+		}
+
+		std::cout << desired_speed << std::endl;
+		m_robotVector[i]->setSpeed(desired_speed);
+	}
+}
+
 void RobotController::step(double end_x){
 
 	for (int i=0; i<m_robotVector.size(); i++){
@@ -531,7 +564,8 @@ bool RobotController::robotPushing(Robot& r){
 
 bool RobotController::robotStacking(Robot* r, float posX){
 	float x=r->getBody()->GetPosition().x;
-	if(x < (m_robotParam.body_length + posX)){
+	// if(x < (m_robotParam.body_length + posX)){
+	if(x<0.0){
 		return true;
 	}
 	return false;

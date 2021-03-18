@@ -5,6 +5,8 @@
  *      Author: ever
  */
 
+// goal position is (x,y)
+
 #include "CliffTerrain.h"
 
 CliffTerrain::CliffTerrain(){};
@@ -67,36 +69,6 @@ void CliffTerrain::createBody(b2World* world){
     m_groundBody = world->CreateBody(&BodyDef);
 
 	b2EdgeShape edgeShape;
-	float h = m_window_y/m_M_TO_PX-m_height;//window_y_px/m_to_pix - wall_h_m;
-	float l = m_window_x/m_M_TO_PX-m_width;//window_x_px/m_to_pix - wall_w_m;
-
-	// Questions:
-	// What does l represent?
-	// What does h represent?
-	// What does m_height represent?
-	// What does m_width represent?
-
-
-		// float h = window.getSize().y - m_height*m_M_TO_PX;
-	// float l = window.getSize().x - m_width*m_M_TO_PX;
-
-	// sf::VertexArray lines(sf::LinesStrip, 5);
-	// lines[0].position = sf::Vector2f(l/2, h/2);
-	// lines[1].position = sf::Vector2f(l/2, window.getSize().y-h/2);
-	// lines[2].position = sf::Vector2f(window.getSize().x-l/2, window.getSize().y-h/2);
-	// lines[3].position = sf::Vector2f(window.getSize().x-l/2, h/2);
-	// lines[4].position = sf::Vector2f(l/2, h/2);
-
-	// Define points for the rectangle frame
-	// Point topLeftPoint = b2Vec2(l/2,h/2);
-	// Point topRightPoint = b2Vec2(m_window_x/m_M_TO_PX - l/2,h/2);
-	// Point bottomRightPoint = b2Vec2(m_window_x/m_M_TO_PX - l/2,m_window_y/m_M_TO_PX - h/2);
-	// Point bottomLeftPoint = b2Vec2(l/2,m_window_y/m_M_TO_PX - h/2);
-	// Point arbitraryPoint = b2Vec2(1.0, 5.0);
-
-	// Point topLeftPoint = b2Vec2(l/2,h/2);
-	// Point topRightPoint = b2Vec2(m_window_x/m_M_TO_PX - l/2,h/2);
-
 
 	// Define all the points relevant to the cliff edges
 	// float cliffTop = m_window_y/m_M_TO_PX - h * 1.5;
@@ -133,9 +105,12 @@ void CliffTerrain::createBody(b2World* world){
 
 	float islandTop = cliffTop;
 	float islandBottom = cliffTop + m_bodyLength;
-	float islandLeft = cliffRightEdge + 3 * m_bodyLength;
-	float islandRight = islandLeft + 4 * m_bodyLength;
+	float islandLeft = cliffRightEdge + 6 * m_bodyLength;
+	// float islandRight = islandLeft + 4 * m_bodyLength;
+	float islandRight = m_window_x*m_M_TO_PX;
 
+	m_posGoal = b2Vec2(islandLeft, islandTop);
+	// std::cout << "CliffTerrain::createBody() " << m_posGoal.x << std::endl;
 
 	Point islandLeftTopPoint = b2Vec2(islandLeft, islandTop);
 	Point islandRightTopPoint = b2Vec2(islandRight, islandTop);

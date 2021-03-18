@@ -95,7 +95,9 @@ void default_parameters(config::sConfig& cfg){
 	cfg.controller.stability_condition = 60;
 
 	cfg.robot.body_length = 1.02;
+	cfg.robot.fixed_speed = true;
 	cfg.robot.speed = 2*PI; //Should not be changed
+	cfg.robot.proportional_control = 1.0;
 
 	cfg.window.WINDOW_X_PX = 1920;
 	cfg.window.WINDOW_Y_PX = 1080;
@@ -191,7 +193,14 @@ void parse_argument(char* argv[], int i, config::sConfig& cfg){
 				cfg.robot.body_length = atof(argv[i + 1]);
 				std::cout << cfg.robot.body_length << std::endl;
 			}
+			else if (std::string(argv[i]) == "-fs" || std::string(argv[i]) == "--fixed_speed") {
+				cfg.robot.fixed_speed = atof(argv[i+1]);
+				std::cout << "Robot Fixed Speed: " << cfg.robot.fixed_speed << std::endl;
+			}
 			else if (std::string(argv[i]) == "-v" || std::string(argv[i]) == "--robot_speed") {
+				cfg.robot.speed = atof(argv[i + 1]);
+			}
+			else if (std::string(argv[i]) == "-kp" || std::string(argv[i]) == "--proportional_control") {
 				cfg.robot.speed = atof(argv[i + 1]);
 			}
 

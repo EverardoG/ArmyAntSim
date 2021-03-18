@@ -63,7 +63,9 @@ struct sController{
 
 struct sRobot{
 	double body_length;
+	int fixed_speed;
 	double speed;
+	double proportional_control;
 	double wheel_distance;
 	double attach_height;
 	double wheel_radius;

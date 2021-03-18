@@ -448,6 +448,7 @@ void Robot::moveBodyWithMotor(){
 		allowMotorRotation(LEFT);
 		m_leftWheelMotor->EnableMotor(true);
 		m_leftWheelMotor->SetMotorSpeed(m_angularSpeed);
+		// TODO: Adjustable torque
 		m_leftWheelMotor->SetMaxMotorTorque(30.0f);
 	}
 
