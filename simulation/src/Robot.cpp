@@ -448,7 +448,9 @@ void Robot::moveBodyWithMotor(){
 		allowMotorRotation(LEFT);
 		m_leftWheelMotor->EnableMotor(true);
 		m_leftWheelMotor->SetMotorSpeed(m_angularSpeed);
-		m_leftWheelMotor->SetMaxMotorTorque(30.0f);
+		// TODO: Adjustable torque
+		// m_leftWheelMotor->SetMaxMotorTorque(30.0f);
+		m_leftWheelMotor->SetMaxMotorTorque(m_robotParameters.torque);
 	}
 
 	else{
@@ -458,7 +460,8 @@ void Robot::moveBodyWithMotor(){
 		allowMotorRotation(RIGHT);
 		m_rightWheelMotor->EnableMotor(true);
 		m_rightWheelMotor->SetMotorSpeed(m_angularSpeed);
-		m_rightWheelMotor->SetMaxMotorTorque(30.0f);
+		// m_rightWheelMotor->SetMaxMotorTorque(30.0f);
+		m_leftWheelMotor->SetMaxMotorTorque(m_robotParameters.torque);
 	}
 
 //	m_shape3.setRadius(10);

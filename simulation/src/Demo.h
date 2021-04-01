@@ -189,6 +189,8 @@ private:
 	//	std::default_random_engine gen;
 	std::normal_distribution<double> m_gauss_delay;
 
+	std::string m_simulation_state = "Formation"; // Current state of the simulation (bridge formation vs bridge dissolution)
+
 protected:
 	b2World* m_world = nullptr; // pointer on the Box2D world
 };

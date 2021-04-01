@@ -235,6 +235,13 @@ public:
 	 */
 	void wait_delay(Robot& robot);
 
+	void SetGlobalSpeed(double desired_speed);
+
+	/**
+	 *
+	*/
+	double calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp);
+
 	/**
 	 * Flag used to notify when a new robot enter the bridge state.
 	 * It is used to write a new entry in the bridge file.

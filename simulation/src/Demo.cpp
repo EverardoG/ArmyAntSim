@@ -162,10 +162,37 @@ void Demo::demoLoop(){
 					 }
 				 }
 
+			// TODO: Refactor main demoloop so that we don't have to edit behaviour in two places at once
+
+			// TODO: Replace this with a nice switch state
+			// Also change the string to an enum
+			// Set the simulation state
+			if (m_elapsedTime < m_config.simulation.bridge_duration && !m_stacking){
+				m_simulation_state = "Formation";
+			}
+			else if (m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration){
+				if (m_simulation_state == "Formation"){
+					std::cout << "Switching to Structure Dissolution." << std::endl;
+					// Set all the robot speeds to fixed speeds
+					m_robotController.SetGlobalSpeed(m_config.robot.speed);
+				}
+				m_simulation_state = "Dissolution";
+			}
+			else{
+				std::cout << "Stopping simulation." << std::endl;
+				m_simulation_state = "Stop";
+			}
+
+
 			 // First simulation step: Bridge formation. The bridge formation duration is defined by m_config.simulation.bridge_duration
 			 // but is ended prematurely if a stacking situation is observed
-			 if(m_elapsedTime < m_config.simulation.bridge_duration && !m_stacking){
+			 if(m_simulation_state == "Formation"){
 
+				 if(m_config.robot.fixed_speed == 0)
+				 {
+					// Calculate the speeds for the robots
+				 	m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), 1.0);
+				 }
 				 //This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
 				 if(!addRobotWithDelay()){
 					 m_stacking = true;
@@ -201,7 +228,7 @@ void Demo::demoLoop(){
 			 }
 
 			 // Second simulation step: Bridge dissolution. The bridge dissolution duration is defined by m_config.simulation.dissolution_duration
-			 else if(m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration){
+			 else if(m_simulation_state == "Dissolution"){
 
 				 m_robotController.step(window.getSize().x);
 				 m_world->Step(1.f/60.f, 100, 100);
@@ -224,7 +251,7 @@ void Demo::demoLoop(){
 				 m_currentIt ++;
 			 }
 
-			 else{
+			 else{ // m_simulation_state == "Stop"
 				 window.close();
 				 break;
 			 }

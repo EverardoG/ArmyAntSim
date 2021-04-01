@@ -8,6 +8,11 @@
  *  @author lucie houel
  */
 
+// Have it so that we set the goal position inside the terrain
+// Maybe even the terrain config so that it can be grabbed from
+// anywhere
+// have some way of redefining goal positions
+
 #ifndef TERRAIN_H_
 #define TERRAIN_H_
 
@@ -66,6 +71,9 @@ public:
 	/** @return the length of the V when it makes sense, 0 otherwise [m] */
 	double getVLength(){return 0;};
 
+	/** @return the position of the goal for the robots */
+	b2Vec2 getPosGoal(){return m_posGoal;};
+
 	/** @return a pointer on the Box2D body of the terrain*/
 	b2Body* getBody();
 
@@ -84,6 +92,7 @@ protected:
 	double m_runaway; //Runaway of the terrain. In the case of the default terrain the length of the ground is of 3*m_runaway (with the width of the window of 2*m_runaway)
 	double m_angle; //Angle of the obstacle in the terrain. In the case of the default terrain it doesn't make sense and is set to 0
 	double m_posY=2.5; //In the case of the default terrain it represents the distance from the top of the window/world to the ground.
+	b2Vec2 m_posGoal = b2Vec2(0.0,0.0); //Position of the goal for the robots
 
 	config::sTerrain m_terrainParam; //Terrain configuration parameters described in Config.h file
 };
