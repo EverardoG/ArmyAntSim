@@ -456,6 +456,9 @@ double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp){
 			desired_speed = 0.1;
 		}
 
+		// Note: this is also triggered at the beginning of the simulation
+		// Consider just making the island higher up
+		// May not matter
 		float desired_y = m_goal_pos.y;
 		if(m_robotVector[i]->getPosition().y < desired_y){
 			desired_speed = m_robotParam.speed;

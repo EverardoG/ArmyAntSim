@@ -69,6 +69,7 @@ struct sRobot{
 	double wheel_distance;
 	double attach_height;
 	double wheel_radius;
+	float torque;
 };
 
 struct sWindow{
