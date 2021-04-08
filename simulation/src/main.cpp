@@ -16,7 +16,7 @@
 void parse_argument(char* argv[], int i, config::sConfig& cfg);
 void load_config(std::string filename, config::sConfig& cfg);
 void help();
-void print_help_and_exit(TCLAP::CmdLineInterface& cmd);
+int print_help_and_exit(TCLAP::CmdLineInterface& cmd);
 
 using namespace TCLAP;
 
@@ -73,10 +73,6 @@ int main(int argc, char* argv[])
 	ValueArg<float>       v_height_arg("", "v_height", "Height of the v shape in v_terrain in robot body lengths", false, 3.5, "HEIGHT float 3.5");
 	ValueArg<float>       angle_arg("", "v_half_angle", "Half angle of the v shape in v_terrain in robot body lengths. When angle > 0, width is not taken into account", false, 50/RAD_TO_DEG, "DEG float 50/RAD_TO_DEG");
 
-	// arg_list.emplace_back(terrain_type_arg);
-
-	// std::cout << arg_list.front() << std::endl;
-	std::cout << "LAMA" << std::endl;
 	// Create Simulation Parameters
 	ValueArg<float>       gravity_arg("g", "gravity", "Magnitude of gravity in simulation in m/s^2", false, 0.0, "ACCEL float 0.0");
 	ValueArg<float>       robot_distance_arg("", "robot_distance", "Distance between the creation of two successive robots in s", false, 3.5, "BL float 3.5");
@@ -160,7 +156,7 @@ int main(int argc, char* argv[])
 	// std::cout << "Terrain type: A " << terrain_type_arg.getValue() << std::endl;
 
 	if (help_arg.getValue()){
-		print_help_and_exit(cmd);
+		return print_help_and_exit(cmd);
 	}
 
 	// Set all the config parameters according to the command line parsing
@@ -213,26 +209,14 @@ int main(int argc, char* argv[])
    return 0;
 }
 
-void print_help_and_exit(CmdLineInterface& cmd)
+int print_help_and_exit(CmdLineInterface& cmd)
 {
 	std::cout << "Launch a simulation for the ant bridge formation" << std::endl;
 	std::cout << "Usage: ./ArmyAntSim [parameters]" << std::endl;
 	std::cout << "Parameters:" << std::endl;
-	std::list<Arg*> arg_list = cmd.getArgList();
+	std::list<Arg*> arg_list = cmd.getArgList(); arg_list.reverse();
+	std::vector<std::string> help_vec;
 	for (Arg* arg : arg_list) {
-		std::string example = " -r <DIST>      Length of the runway relative to the robot body length (--runway, float, default = 7)";
-		std::cout << "-------------------" << std::endl;
-		// Look at the long ID
-		//
-
-
-		// // Get the Short Id
-		// std::string short_id = arg->shortID();
-
-		// // Get the long id and extract the other flag if there is one
-		// std::string long_id = arg->longID();
-		// std::string extra_id = "";
-
 		// This part gets the argument flags Ex: -h and --help
 		std::string line;
 		std::vector<std::string> vec;
@@ -252,19 +236,13 @@ void print_help_and_exit(CmdLineInterface& cmd)
 			flags[1] = flags[1].substr(1,flags[1].size()-2);
 		}
 
-		std::cout << "toString vector: " << std::endl;
-		for (std::string str : flags) {
-			std::cout << str << std::endl;
-		}
-		std::cout << "toString end" << std::endl;
-
 		// This part gets the human-readable INPUT, type, default
 		// std::string line2;
 		std::string short_ID = arg->shortID();
 		if (short_ID.find('<') != std::string::npos) {
 			// So we know this is a value argument
 			std::string info_string = short_ID.substr(short_ID.find("<")+1, short_ID.find(">")-short_ID.find("<")-1);
-			std::cout << "info_string: " << info_string << std::endl;
+			// std::cout << "info_string: " << info_string << std::endl;
 
 			// Split the info string into its components
 			std::vector<std::string> vec2;
@@ -272,11 +250,6 @@ void print_help_and_exit(CmdLineInterface& cmd)
 			while(std::getline(ss,line,' ')) {
 				vec2.push_back(line);
 			}
-			std::cout << "info_string vector: " << std::endl;
-			for (std::string str : vec2) {
-				std::cout << str << std::endl;
-			}
-			std::cout << "info_string vector end" << std::endl;
 
 			std::string human_readable = vec2[0];
 			std::string arg_type = vec2[1];
@@ -287,69 +260,70 @@ void print_help_and_exit(CmdLineInterface& cmd)
 			if (flags.size() == 2) { second_arg = flags[1] + ", "; }
 
 			// Build the help message for this argument
-			std::string arg_output = " " + flags[0] + " <" + human_readable + ">      " + arg->getDescription() + " (" + second_arg + arg_type + ", default = " + arg_default + ")";
+			std::string help_output = flags[0] + " <" + human_readable + ">" + arg->getDescription() + " (" + second_arg + arg_type + ", default = " + arg_default + ")";
 
-			std::cout << arg_output << std::endl;
-
-			// std::string example = " -r <DIST>      Length of the runway relative to the robot body length (--runway, float, default = 7)";
+			// Shove it in with the others
+			help_vec.emplace_back(help_output);
 		}
 		else {
 			// We'll do something else here
+
 		}
 
-		// std::vector<std::string> vec2;
-		// std::stringstream ss2(arg->longID());
-		// while(std::getline(ss2,line,' ')) {
-		// 	vec.push_back(line);
-		// }
-		// std::cout << "longID vector: " << std::endl;
-		// for (std::string str : vec) {
-		// 	std::cout << str << std::endl;
-		// }
-		// std::cout << "longID end" << std::endl;
+		// std::cout << "getFlag: " << arg->getFlag() << std::endl;
+		// std::cout << "getName: " << arg->getName() << std::endl;
+		// std::cout << "getDescription: " << arg->getDescription() << std::endl;
+		// std::cout << "isRequired: " << arg->isRequired() << std::endl;
+		// std::cout << "toString: " << arg->toString() << std::endl;
+		// std::cout << "Short ID: " << arg->shortID() << std::endl;
+		// std::cout << "Long ID: " << arg->longID() << std::endl;
+		// std::cout << "setBy: " << arg->setBy() << std::endl;
+		// // std::cout << arg->getValue() << std::endl;
+		// std::cout << "flagStartString: " << arg->flagStartString() << std::endl;
+		// std::cout << "nameStartString: " << arg->nameStartString() << std::endl;
+	} // end for (Arg* arg : arg_list)
 
-		// Throw in the description
-		// std::string id_description = short_id + " " + arg->getDescription();
-
-		//
-
-		std::cout << "getFlag: " << arg->getFlag() << std::endl;
-		std::cout << "getName: " << arg->getName() << std::endl;
-		std::cout << "getDescription: " << arg->getDescription() << std::endl;
-		std::cout << "isRequired: " << arg->isRequired() << std::endl;
-		std::cout << "toString: " << arg->toString() << std::endl;
-		std::cout << "Short ID: " << arg->shortID() << std::endl;
-		std::cout << "Long ID: " << arg->longID() << std::endl;
-		std::cout << "setBy: " << arg->setBy() << std::endl;
-		// std::cout << arg->getValue() << std::endl;
-		std::cout << "flagStartString: " << arg->flagStartString() << std::endl;
-		std::cout << "nameStartString: " << arg->nameStartString() << std::endl;
-
-		// // start the info string with 14 empty spaces
-		// std::string info_str(14, ' ');
-
-		// // Add in the argument flag if there is one
-		// if (arg->getFlag().size() >0) {
-		// 	info_str.replace(2, 1, "-"+arg->getFlag());
-		// }
-
-		// // Add in the
-
-
-
-		// std::cout << "	-r DIST		Sets the length of the v-terrain runaway relatively to the robot body length (--terrain_runaway, default = 7) " << std::endl;
-		// std::cout << "  -cp PATH    Give the path of the configuration file (--configuration_path) \n" << std::endl;
-		// std::cout << " " + arg->longID() + "  " + arg->getDescription()
-
-		// std::cou
-
-	// std::cout << "	-cp PATH    Give the path of the configuration file (--configuration_path) \n" << std::endl;
-
+	// Find the length of the longest intro for all the arguments. Intro includes --flag <HUMAN-READABLE-INPUT>
+	int longest_intro = 0;
+	// std::cout << "longest_intro: " << longest_intro << std::endl;
+	for (std::string help_output : help_vec) {
+		if (help_output.find(">") > longest_intro) {
+			longest_intro = help_output.find(">");
+			// std::cout << "longest_intro: " << longest_intro << std::endl;
+		}
+		// std::cout << help_output << std::endl;
 	}
 
+	// Left align all of the descriptions according to the longest intro
+	for (std::string help_output : help_vec) {
+		// split the string into intro and description
+		std::vector<std::string> help_components;
+		std::stringstream ss(help_output);
+		std::string line;
+		while(std::getline(ss,line,'>')) {
+			help_components.push_back(line);
+		}
+
+		std::string intro = help_components[0] + ">";
+		std::string description = help_components[1];
+
+		// Check if this is a key argument and print extra message if relevant
+		if (intro == "--configuration_path <PATH>") {std::cout << "\n  Config: " << std::endl;}
+		else if (intro == "-y <TERRAIN>") {std::cout << "\n  Terrain:" << std::endl;}
+		else if (intro == "--robot_distance <BL>") {std::cout << "\n  Simulation:" << std::endl;}
+		else if (intro == "--body_length <METERS>") {std::cout << "\n  Robot:" << std::endl;}
+		else if (intro == "--window_x <PIX>") {std::cout << "\n  Window:" << std::endl;}
+		else if (intro == "--file_path <PATH>") {std::cout << "\n  File:" << std::endl;}
+		// Make the intro longer according to the longest_intro. Add an offset for nicer spacing
+		intro =  intro + std::string( longest_intro - intro.size() + 5, ' ');
+
+		// Print the argument help
+		std::cout << "    " << intro << description << std::endl;
+	}
+	std::cout << std::endl;
 
 
-
+	return 0;
 
 }
 
