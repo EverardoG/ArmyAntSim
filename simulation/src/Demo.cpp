@@ -256,7 +256,7 @@ void Demo::demoLoop(){
 				 break;
 			 }
 		 }
- }
+ }  // end if visualization is active
 
  // Case 2: the visualization is deactivated. It can be activated/deactivated by giving the right argument to the function (\ref param)
  else{
