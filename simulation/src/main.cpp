@@ -5,14 +5,35 @@
 #include "SFML/Graphics.hpp"
 #include "SFML/Window.hpp"
 #include <iostream>
+#include "tclap/CmdLine.h"
 
 #include "Config.h"
 #include "Demo.h"
+#include <list>
+#include <any>
 
-void default_parameters(config::sConfig& cfg);
+// void default_parameters(config::sConfig& cfg);
 void parse_argument(char* argv[], int i, config::sConfig& cfg);
 void load_config(std::string filename, config::sConfig& cfg);
 void help();
+void print_help_and_exit(TCLAP::CmdLineInterface& cmd);
+
+using namespace TCLAP;
+
+// class CustomHelpOutput : public TCLAP::StdOutput {
+// 	public:
+// 		virtual void usage(TCLAP::CmdLineInterface& _cmd) override {
+// 			std::cout << "my program is called " << _cmd.getProgramName() << std::endl;
+// 		}
+// };
+
+// inline void CmdLine::setOutput(CmdLineOutput* co)
+// {
+// 	if (!_userSetOutput)
+// 		delete _output;
+// 	_userSetOutput = true;
+// 	_output = co;
+// }
 
 int main(int argc, char* argv[])
 {
@@ -26,40 +47,165 @@ int main(int argc, char* argv[])
 	bool config_file = false;
 	std::string config_file_path;
 
-	config::sConfig configParam;
-	default_parameters(configParam);
+	config::sConfig cfg;
+	// default_parameters(configParam);
 
-    for (int i = 1; i < argc; i++) { /* We will iterate over argv[] to get the parameters stored inside.
-                                      * Note that we're starting on 1 because we don't need to know the
-                                      * path of the program, which is stored in argv[0] */
-//        if (i + 1 != argc){ // Check that we haven't finished parsing already
-            if (std::string(argv[i]) == "-h" || std::string(argv[i]) == "--help") {
-            	printf("tetetete \n");
-            	help();
-            	return 0;
-            }
-            else if (i + 1 != argc){
-						// The first thing to check is whether a configuration file has been specified
-            	if (std::string(argv[i]) == "-cp" || std::string(argv[i]) == "--configuration_path") {
-    				// We know the next argument *should* be the filename:
-    				config_file_path = std::string(argv[i + 1]);
-    				config_file = true;
-    				load_config(config_file_path, configParam);
-    				break;
-            	}
-                else{
-                	parse_argument(argv, i, configParam);
-                }
-            }
+	// list of args
+	std::list<std::any> arg_list;
 
-    		if(configParam.terrain.v_angle > 0){
-    			configParam.terrain.v_width = tan(configParam.terrain.v_angle)*2*configParam.terrain.v_height;
-    		}
+	// try {
+	// Create the command line object
+	CmdLine cmd("Command description message",' ',"0.99", false);
+	// cmd.setOutput(new CustomHelpOutput());
 
-//        }
+	// Check if help swtich is triggered
+	SwitchArg   help_arg("h","help", "Print help message", false);
+	cmd.add(help_arg);
+
+	// Configuration file. If one is specified, it overrides all other commandline inputs
+	ValueArg<std::string> config_path_arg("","configuration_path", "Path of the configuration file", false, "", "PATH string \"\"");
+	cmd.add(config_path_arg);
+
+	// Create Terrain parameters
+	ValueArg<std::string> terrain_type_arg("y", "terrain_type", "Type of terrain used for simulation.", false, "v_terrain", "TERRAIN string \"v_terrain\"");
+	ValueArg<float>       terrain_runway_arg("r", "terrain_runway", "Length of the terrain runway in robot body lengths", false, 8.0, "DIST float 8.0");
+	ValueArg<float>       v_width_arg("", "v_width","Width of the v shape in v_terrain in robot body lengths", false, 10.0, "WIDTH float 10.0");
+	ValueArg<float>       v_height_arg("", "v_height", "Height of the v shape in v_terrain in robot body lengths", false, 3.5, "HEIGHT float 3.5");
+	ValueArg<float>       angle_arg("", "v_half_angle", "Half angle of the v shape in v_terrain in robot body lengths. When angle > 0, width is not taken into account", false, 50/RAD_TO_DEG, "DEG float 50/RAD_TO_DEG");
+
+	// arg_list.emplace_back(terrain_type_arg);
+
+	// std::cout << arg_list.front() << std::endl;
+	std::cout << "LAMA" << std::endl;
+	// Create Simulation Parameters
+	ValueArg<float>       gravity_arg("g", "gravity", "Magnitude of gravity in simulation in m/s^2", false, 0.0, "ACCEL float 0.0");
+	ValueArg<float>       robot_distance_arg("", "robot_distance", "Distance between the creation of two successive robots in s", false, 3.5, "BL float 3.5");
+	ValueArg<float>       robot_phase_arg("","robot_phase", "Phase shift between two successive robots in rad", false, 0.0, "RAD float 0.0");
+	ValueArg<float>       robot_delay_arg("","robot_delay", "Delay between the creation of two successive robots in s",false,3.25,"SEC float 3.25");
+	ValueArg<float>       robot_init_x_arg("", "robot_init_x", "Initial x distance of the robot from the V start",false,5.2,"BL float 5.2");
+	ValueArg<float>       robot_init_y_arg("", "robot_init_y", "Initial y position of the robot",false,1.0,"BL float 1.0");
+	ValueArg<int>         num_robots_arg("","number_robots", "Number of robots for the whole simulation", false, 25, "NUM int 25");
+	ValueArg<float>       sim_duration_arg("t", "simulation_duration", "Duration of the bridge part of the simulation", false, 100, "SEC float 100");
+	ValueArg<float>       dis_duration_arg("", "dissolution_duration", "Duration of the dissolution part of the simulation", false, 200, "SEC float 200");
+	ValueArg<bool>        visual_arg("", "enable_visualization", "Play the visualizer for the simulation", false, true, "BOOL bool true");
+
+	// Create Controller Parameters
+	ValueArg<float> angle_limit_arg("a", "limit_angle", "Minimum angle before robot is allowed to grab", false, PI/2, "RAD float PI/2");
+	ValueArg<float> bridge_delay_arg("", "bridge_delay", "Pause delay in the bridge state in s", false, 5.0, "SEC float 5.0");
+	ValueArg<float> walk_delay_arg("","walk_delay", "Pause delay in the walking state in s", false, 0.5,"SEC float 0.5");
+	ValueArg<float> push_delay_arg("", "push_delay", "Maximum duration of the movement before a robot is considered as pushing in s. The robot creates a grip after this time.", false, 1.0,"SEC float 1.0");
+	ValueArg<int> max_robots_arg("","max_robots", "Maximum number of robots in the window", false, 50, "NUM int 50");
+	ValueArg<float> stable_time_arg("", "stability_condition", "Time after which a bridge is considered stable in s", false, 60, "SEC float 60");
+
+	// Create Robots Parameters
+	ValueArg<float> body_length_arg("","body_length", "Body length of the robot in m", false, 1.02, "METERS float 1.02");
+	ValueArg<float> speed_arg("v", "robot_speed", "Rotational speed of the robot in rad/s", false, 2*PI, "RAD/S float 2*PI");
+	ValueArg<bool> fixed_speed_arg("", "fixed_speed", "True: Robots have a fixed speed. False: Each robot has a dynamic speed.", false, true, "BOOL bool true");
+	ValueArg<float> kp_arg("", "proportional_control", "Proportional control gain for dynamic speed", false, 1.0, "VALUE float 1.0");
+	ValueArg<float> torque_arg("", "torque", "Torque of the robot joints", false, 30.0f, "NEWTONS float 30.0f");
+
+	// Create Window Parameters
+	ValueArg<int> window_x_arg("", "window_x", "Width of the window in pixels", false, 1920, "PIX int 1920");
+	ValueArg<int> window_y_arg("", "window_y", "Height of the window in pixels", false, 1080, "PIX int 1080");
+
+	// Create File Parameters
+	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "log/", "PATH string \"log\"");
+	ValueArg<std::string> logfile_name_arg("", "file_name", "Prefix for the names of the result files", false, "exp_", "NAME string \"exp_\"");
+
+	// Add Terrain parameters
+	cmd.add(terrain_type_arg);
+	cmd.add(terrain_runway_arg);
+	cmd.add(v_width_arg);
+	cmd.add(v_height_arg);
+	cmd.add(angle_arg);
+
+	// Add Simulation parameters
+	cmd.add(gravity_arg);
+	cmd.add(robot_distance_arg);
+	cmd.add(robot_phase_arg);
+	cmd.add(robot_delay_arg);
+	cmd.add(robot_init_x_arg);
+	cmd.add(robot_init_y_arg);
+	cmd.add(num_robots_arg);
+	cmd.add(sim_duration_arg);
+	cmd.add(dis_duration_arg);
+	cmd.add(visual_arg);
+
+	// Add Controlller parameters
+	cmd.add(angle_limit_arg);
+	cmd.add(bridge_delay_arg);
+	cmd.add(walk_delay_arg);
+	cmd.add(push_delay_arg);
+	cmd.add(max_robots_arg);
+	cmd.add(stable_time_arg);
+
+	// Add Robots parameters
+	cmd.add(body_length_arg);
+	cmd.add(speed_arg);
+	cmd.add(fixed_speed_arg);
+	cmd.add(kp_arg);
+	cmd.add(torque_arg);
+
+	// Add Window parameters
+	cmd.add(window_x_arg);
+	cmd.add(window_y_arg);
+
+	// Add file parameters
+	cmd.add(logfile_path_arg);
+	cmd.add(logfile_name_arg);
+
+	// Parse the command line
+	cmd.parse(argc, argv);
+
+	// std::cout << "Terrain type: A " << terrain_type_arg.getValue() << std::endl;
+
+	if (help_arg.getValue()){
+		print_help_and_exit(cmd);
+	}
+
+	// Set all the config parameters according to the command line parsing
+	cfg.terrain.type = terrain_type_arg.getValue();
+	cfg.terrain.runaway = terrain_runway_arg.getValue();
+	cfg.terrain.v_width = v_width_arg.getValue();
+	cfg.terrain.v_height = v_height_arg.getValue();
+	cfg.terrain.v_angle = angle_arg.getValue();
+
+	cfg.simulation.gravity = gravity_arg.getValue();
+	cfg.simulation.robot_distance = robot_distance_arg.getValue();
+	cfg.simulation.robot_phase = robot_phase_arg.getValue();
+	cfg.simulation.robot_delay = robot_delay_arg.getValue();
+	cfg.simulation.robot_initial_posX = robot_init_x_arg.getValue();
+	cfg.simulation.robot_initial_posY = robot_init_y_arg.getValue();
+	cfg.simulation.nb_robots = num_robots_arg.getValue();
+	cfg.simulation.bridge_duration = sim_duration_arg.getValue();
+	cfg.simulation.dissolution_duration = dis_duration_arg.getValue();
+	cfg.simulation.visualization = visual_arg.getValue();
+
+	cfg.controller.angle_limit = angle_limit_arg.getValue();
+	cfg.controller.bridge_delay = bridge_delay_arg.getValue();
+	cfg.controller.walk_delay = walk_delay_arg.getValue();
+	cfg.controller.time_before_pushing = push_delay_arg.getValue();
+	cfg.controller.max_robot_window = max_robots_arg.getValue();
+	cfg.controller.stability_condition = stable_time_arg.getValue();
+
+	cfg.robot.body_length = body_length_arg.getValue();
+	cfg.robot.fixed_speed = fixed_speed_arg.getValue();
+	cfg.robot.speed = speed_arg.getValue();
+	cfg.robot.proportional_control = kp_arg.getValue();
+	cfg.robot.torque = torque_arg.getValue();
+
+	cfg.window.WINDOW_X_PX = window_x_arg.getValue();
+	cfg.window.WINDOW_Y_PX = window_y_arg.getValue();
+
+	cfg.logfile_name = logfile_path_arg.getValue();
+	cfg.logfile_path = logfile_name_arg.getValue();
+
+	// Follow rule for v half angle
+	if(cfg.terrain.v_angle > 0){
+    	cfg.terrain.v_width = tan(cfg.terrain.v_angle)*2*cfg.terrain.v_height;
     }
 
-	Demo myDemo(world, configParam);
+	Demo myDemo(world, cfg);
 	myDemo.init();
 	myDemo.demoLoop();
 	myDemo.writeResultFile();
@@ -67,46 +213,186 @@ int main(int argc, char* argv[])
    return 0;
 }
 
-/** Update the config::sConfig cfg with the default configuration parameter values
-*/
-void default_parameters(config::sConfig& cfg){
+void print_help_and_exit(CmdLineInterface& cmd)
+{
+	std::cout << "Launch a simulation for the ant bridge formation" << std::endl;
+	std::cout << "Usage: ./ArmyAntSim [parameters]" << std::endl;
+	std::cout << "Parameters:" << std::endl;
+	std::list<Arg*> arg_list = cmd.getArgList();
+	for (Arg* arg : arg_list) {
+		std::string example = " -r <DIST>      Length of the runway relative to the robot body length (--runway, float, default = 7)";
+		std::cout << "-------------------" << std::endl;
+		// Look at the long ID
+		//
 
-	cfg.terrain.runaway = 8; //7
-	cfg.terrain.v_width = 10; //10.2
-	cfg.terrain.v_height = 3.5; //8
-	cfg.terrain.v_angle = 50/RAD_TO_DEG;
 
-	cfg.simulation.gravity = 0.0;
-	cfg.simulation.robot_distance = 3.5;
-	cfg.simulation.robot_phase = 0;
-	cfg.simulation.robot_delay = 3.25;
-	cfg.simulation.robot_initial_posX = 5.20;
-	cfg.simulation.robot_initial_posY = 1.0;
-	cfg.simulation.nb_robots = 25; //250
-	cfg.simulation.bridge_duration = 100;
-	cfg.simulation.dissolution_duration = 200;
-	cfg.simulation.visualization = true;
+		// // Get the Short Id
+		// std::string short_id = arg->shortID();
 
-	cfg.controller.angle_limit = PI/2;// PI/2
-	cfg.controller.bridge_delay = 5; //5
-	cfg.controller.walk_delay = 0.5; //Should not be changed
-	cfg.controller.time_before_pushing = 1;
-	cfg.controller.max_robot_window = 50;
-	cfg.controller.stability_condition = 60;
+		// // Get the long id and extract the other flag if there is one
+		// std::string long_id = arg->longID();
+		// std::string extra_id = "";
 
-	cfg.robot.body_length = 1.02;
-	cfg.robot.fixed_speed = true;
-	cfg.robot.speed = 2*PI; //Should not be changed
-	cfg.robot.proportional_control = 1.0;
-	cfg.robot.torque = 30.0f;
+		// This part gets the argument flags Ex: -h and --help
+		std::string line;
+		std::vector<std::string> vec;
+		std::stringstream ss(arg->toString());
+		while(std::getline(ss,line,' ')) {
+			vec.push_back(line);
+		}
 
-	cfg.window.WINDOW_X_PX = 1920;
-	cfg.window.WINDOW_Y_PX = 1080;
+		// better name
+		std::vector<std::string> flags = vec;
 
-	cfg.logfile_name = "exp";
-	cfg.logfile_path = "experiments/";
+		// both a short flag and long flag -> take out the parenthesis from the long flag
+		if (flags.size() == 1) {
+			flags[0] = flags[0].substr(1,flags[0].size()-2);
+		}
+		else if (flags.size() == 2) {
+			flags[1] = flags[1].substr(1,flags[1].size()-2);
+		}
+
+		std::cout << "toString vector: " << std::endl;
+		for (std::string str : flags) {
+			std::cout << str << std::endl;
+		}
+		std::cout << "toString end" << std::endl;
+
+		// This part gets the human-readable INPUT, type, default
+		// std::string line2;
+		std::string short_ID = arg->shortID();
+		if (short_ID.find('<') != std::string::npos) {
+			// So we know this is a value argument
+			std::string info_string = short_ID.substr(short_ID.find("<")+1, short_ID.find(">")-short_ID.find("<")-1);
+			std::cout << "info_string: " << info_string << std::endl;
+
+			// Split the info string into its components
+			std::vector<std::string> vec2;
+			std::stringstream ss(info_string);
+			while(std::getline(ss,line,' ')) {
+				vec2.push_back(line);
+			}
+			std::cout << "info_string vector: " << std::endl;
+			for (std::string str : vec2) {
+				std::cout << str << std::endl;
+			}
+			std::cout << "info_string vector end" << std::endl;
+
+			std::string human_readable = vec2[0];
+			std::string arg_type = vec2[1];
+			std::string arg_default = vec2[2];
+
+			// Figure out what to do for flag in the parentheses at the end
+			std::string second_arg = "";
+			if (flags.size() == 2) { second_arg = flags[1] + ", "; }
+
+			// Build the help message for this argument
+			std::string arg_output = " " + flags[0] + " <" + human_readable + ">      " + arg->getDescription() + " (" + second_arg + arg_type + ", default = " + arg_default + ")";
+
+			std::cout << arg_output << std::endl;
+
+			// std::string example = " -r <DIST>      Length of the runway relative to the robot body length (--runway, float, default = 7)";
+		}
+		else {
+			// We'll do something else here
+		}
+
+		// std::vector<std::string> vec2;
+		// std::stringstream ss2(arg->longID());
+		// while(std::getline(ss2,line,' ')) {
+		// 	vec.push_back(line);
+		// }
+		// std::cout << "longID vector: " << std::endl;
+		// for (std::string str : vec) {
+		// 	std::cout << str << std::endl;
+		// }
+		// std::cout << "longID end" << std::endl;
+
+		// Throw in the description
+		// std::string id_description = short_id + " " + arg->getDescription();
+
+		//
+
+		std::cout << "getFlag: " << arg->getFlag() << std::endl;
+		std::cout << "getName: " << arg->getName() << std::endl;
+		std::cout << "getDescription: " << arg->getDescription() << std::endl;
+		std::cout << "isRequired: " << arg->isRequired() << std::endl;
+		std::cout << "toString: " << arg->toString() << std::endl;
+		std::cout << "Short ID: " << arg->shortID() << std::endl;
+		std::cout << "Long ID: " << arg->longID() << std::endl;
+		std::cout << "setBy: " << arg->setBy() << std::endl;
+		// std::cout << arg->getValue() << std::endl;
+		std::cout << "flagStartString: " << arg->flagStartString() << std::endl;
+		std::cout << "nameStartString: " << arg->nameStartString() << std::endl;
+
+		// // start the info string with 14 empty spaces
+		// std::string info_str(14, ' ');
+
+		// // Add in the argument flag if there is one
+		// if (arg->getFlag().size() >0) {
+		// 	info_str.replace(2, 1, "-"+arg->getFlag());
+		// }
+
+		// // Add in the
+
+
+
+		// std::cout << "	-r DIST		Sets the length of the v-terrain runaway relatively to the robot body length (--terrain_runaway, default = 7) " << std::endl;
+		// std::cout << "  -cp PATH    Give the path of the configuration file (--configuration_path) \n" << std::endl;
+		// std::cout << " " + arg->longID() + "  " + arg->getDescription()
+
+		// std::cou
+
+	// std::cout << "	-cp PATH    Give the path of the configuration file (--configuration_path) \n" << std::endl;
+
+	}
+
+
+
+
 
 }
+
+/** Update the config::sConfig cfg with the default configuration parameter values
+*/
+// void default_parameters(config::sConfig& cfg){
+
+// 	cfg.terrain.runaway = 8; //7
+// 	cfg.terrain.v_width = 10; //10.2
+// 	cfg.terrain.v_height = 3.5; //8
+// 	cfg.terrain.v_angle = 50/RAD_TO_DEG;
+
+// 	cfg.simulation.gravity = 0.0;
+// 	cfg.simulation.robot_distance = 3.5;
+// 	cfg.simulation.robot_phase = 0;
+// 	cfg.simulation.robot_delay = 3.25;
+// 	cfg.simulation.robot_initial_posX = 5.20;
+// 	cfg.simulation.robot_initial_posY = 1.0;
+// 	cfg.simulation.nb_robots = 25; //250
+// 	cfg.simulation.bridge_duration = 100;
+// 	cfg.simulation.dissolution_duration = 200;
+// 	cfg.simulation.visualization = true;
+
+// 	cfg.controller.angle_limit = PI/2;// PI/2
+// 	cfg.controller.bridge_delay = 5; //5
+// 	cfg.controller.walk_delay = 0.5; //Should not be changed
+// 	cfg.controller.time_before_pushing = 1;
+// 	cfg.controller.max_robot_window = 50;
+// 	cfg.controller.stability_condition = 60;
+
+// 	cfg.robot.body_length = 1.02;
+// 	cfg.robot.fixed_speed = true;
+// 	cfg.robot.speed = 2*PI; //Should not be changed
+// 	cfg.robot.proportional_control = 1.0;
+// 	cfg.robot.torque = 30.0f;
+
+// 	cfg.window.WINDOW_X_PX = 1920;
+// 	cfg.window.WINDOW_Y_PX = 1080;
+
+// 	cfg.logfile_name = "exp";
+// 	cfg.logfile_path = "experiments/";
+
+// }
 
 void parse_argument(char* argv[], int i, config::sConfig& cfg){
 
@@ -235,7 +521,7 @@ void help(){
 	std::cout << "Launch a simulation for the ant bridge formation" << std::endl;
 	std::cout << "Usage: Simulation_v2 [parameters]" << std::endl;
 	std::cout << "Parameters:" << std::endl;
-	std::cout << "	-cp PATH	Give the path of the configuration file (--configuration_path) \n" << std::endl;
+	std::cout << "	-cp PATH    Give the path of the configuration file (--configuration_path) \n" << std::endl;
 
 	std::cout << "	Terrain parameters:" << std::endl;
 	std::cout << "	-r DIST		Sets the length of the v-terrain runaway relatively to the robot body length (--terrain_runaway, default = 7) " << std::endl;
