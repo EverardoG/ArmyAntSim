@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 	ValueArg<float>       robot_phase_arg("","robot_phase", "Phase shift between two successive robots in rad", false, 0.0, "RAD float 0.0");
 	ValueArg<float>       robot_delay_arg("","robot_delay", "Delay between the creation of two successive robots in s",false,3.25,"SEC float 3.25");
 	ValueArg<float>       robot_init_x_arg("", "robot_init_x", "Initial x distance of the robot from the V start",false,5.2,"BL float 5.2");
-	ValueArg<float>       robot_init_y_arg("", "robot_init_y", "Initial y position of the robot",false,1.0,"BL float 1.0");
+	ValueArg<float>       robot_init_y_arg("", "robot_init_y", "Initial y position of the robot",false,0.0,"BL float 0.0");
 	ValueArg<int>         num_robots_arg("","number_robots", "Number of robots for the whole simulation", false, 25, "NUM int 25");
 	ValueArg<float>       sim_duration_arg("t", "simulation_duration", "Duration of the bridge part of the simulation", false, 100, "SEC float 100");
 	ValueArg<float>       dis_duration_arg("", "dissolution_duration", "Duration of the dissolution part of the simulation", false, 200, "SEC float 200");

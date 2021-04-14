@@ -76,13 +76,6 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 		m_terrain = new CliffTerrain;
 	}
 
-	// Vterrain m_terrain;
-	// this successfully changes the terrain type but for some reason it doesn't render properly
-	// seems to have to do with some variables (such as m_M_TO_PX) not being defined properly
-	// seems that m_M_TO_PX is defined properly on the first loop, but becomes 0 on all subsequent loops
-	// That's probably because this m_terrain is created locally and doesn't replace the actual m_terrain attribute
-	// Hence, it works fine the first time, but after that the simulation defaults to the m_terrain defined in Demo.h
-
 	std::cout << "m_config.window.WINDOW_X_PX: " << m_config.window.WINDOW_X_PX << std::endl;
 
 	m_terrain->create(m_world, window, m_config.terrain, m_config.window.WINDOW_X_PX, m_config.robot.body_length );
@@ -97,13 +90,7 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 		std::cout << "V_slope x position" << std::endl;
 	}
 	else if(!(m_terrain->getType()==DEFAULT)){
-		// std::cout << "m_terrain->getTopLeftCorner().x | " << m_terrain->getTopLeftCorner().x << std::endl;
-		// std::cout << "m_config.simulation.robot_initial_posX | " << m_config.simulation.robot_initial_posX << std::endl;
-		// std::cout << "m_config.robot.body_length | " << m_config.robot.body_length << std::endl;
-
 		m_config.simulation.robot_initial_posX = m_terrain->getTopLeftCorner().x - m_config.simulation.robot_initial_posX*m_config.robot.body_length;
-		// std::cout << "m_config.simulation.robot_initial_posX | " << m_config.simulation.robot_initial_posX << std::endl;
-		// std::cout << "DEFAULT x position" << std::endl;
 	}
 	else
 	{
@@ -113,8 +100,6 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	/**Initial y position of the robot*/
 	m_config.robot.wheel_radius = (m_config.robot.body_length - 0.02)/4;
 	m_config.simulation.robot_initial_posY = m_terrain->getTopLeftCorner().y - m_config.robot.wheel_radius - m_config.simulation.robot_initial_posY * m_config.robot.body_length;
-
-	// TODO: Parse the -ry that is passed into the simulation
 
 	m_robotController.create(m_config.controller, m_config.robot, m_terrain->getBody());
 	m_robotController.setScale(m_to_px);
@@ -144,130 +129,6 @@ void Demo::init(){
 // Both cases are then almost identical apart from the simulation part.
 void Demo::demoLoop(){
 
- // ACTIVE VISUALIZATION
- // Case 1: the visualization is activated. It can be activated/deactivated by giving the right argument to the function (\ref param)
-//  if(m_config.simulation.visualization){
-// 	 // SFML event loop
-// 	 while (window.isOpen())
-// 		 {
-// 			 // check all the window's events that were triggered since the last iteration of the loop
-// 			 sf::Event event;
-// 			 while (window.pollEvent(event)) //
-// 				 {
-// 					 // "close requested" event: we close the window
-// 					 if (event.type == sf::Event::Closed)
-// 						 window.close();
-
-// 					 // In case of visualization, a screenshot of the window can be taken anytime when typing the S key
-// 					 if (event.key.code == sf::Keyboard::S)
-// 					 {
-// 							 sf::Image Screen = window.capture();
-// 							 std::string name = "screenshot_" + std::to_string(m_elapsedTime) + ".jpg";
-// 							 std::cout << "[demoLoop] About to save image " << name << std::endl;
-// 							 Screen.saveToFile(name);
-// 					 }
-// 				 }
-
-// 			// TODO: Refactor main demoloop so that we don't have to edit behaviour in two places at once
-
-// 			// TODO: Replace this with a nice switch state
-// 			// Also change the string to an enum
-// 			// Set the simulation state
-// 			if (m_elapsedTime < m_config.simulation.bridge_duration && !m_stacking){
-// 				m_simulation_state = "Formation";
-// 			}
-// 			else if (m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration){
-// 				if (m_simulation_state == "Formation"){
-// 					std::cout << "Switching to Structure Dissolution." << std::endl;
-// 					// Set all the robot speeds to fixed speeds
-// 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
-// 				}
-// 				m_simulation_state = "Dissolution";
-// 			}
-// 			else{
-// 				std::cout << "Stopping simulation." << std::endl;
-// 				m_simulation_state = "Stop";
-// 			}
-
-
-// 			 // First simulation step: Bridge formation. The bridge formation duration is defined by m_config.simulation.bridge_duration
-// 			 // but is ended prematurely if a stacking situation is observed
-// 			 if(m_simulation_state == "Formation"){
-
-// 				 if(m_config.robot.fixed_speed == 0)
-// 				 {
-// 					// Calculate the speeds for the robots
-// 				 	m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), 1.0);
-// 				 }
-// 				 //This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
-// 				 if(!addRobotWithDelay()){
-// 					 m_stacking = true;
-// 					 printf("robot stacking \n");
-//  //					m_bridgeFile.close();
-// 					 continue;
-// 				 }
-// 				 m_robotController.step(window.getSize().x);
-// 				 m_world->Step(1.f/60.f, 100, 100);
-// 				 m_robotController.removeRobot();
-
-// 				 // Drawing part (on SFML window)
-// 				 window.clear(sf::Color::White);
-// 				 m_terrain->drawBody(window);
-// 				 m_robotController.drawRobots(window, m_to_px);
-// 				 window.display();
-
-// 				 writeBridgeFile();
-
-// 				 // Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-// 				 if(m_currentIt % 600 == 0){
-// 					 takeScreenshot(false, 1);
-// 				 }
-
-// 				 m_elapsedTime += 1.f/FPS;
-// 				 m_currentIt ++;
-// 				 if(!m_stableBridge){
-// 					 m_stableBridge = m_robotController.isBridgeStable();
-// 				 }
-// 				 if(periodic_delay){
-// 					 m_config.simulation.robot_delay = 2.5/(cos(PI/(18*60)*m_currentIt)*cos(PI/(18*60)*m_currentIt));
-// 				 }
-// 			 }
-
-// 			 // Second simulation step: Bridge dissolution. The bridge dissolution duration is defined by m_config.simulation.dissolution_duration
-// 			 else if(m_simulation_state == "Dissolution"){
-
-// 				 m_robotController.step(window.getSize().x);
-// 				 m_world->Step(1.f/60.f, 100, 100);
-// 				 m_robotController.removeRobot();
-
-// 				 // Drawing part (on SFML window)
-// 				 window.clear(sf::Color::White);
-// 				 m_terrain->drawBody(window);
-// 				 m_robotController.drawRobots(window, m_to_px);
-// 				 window.display();
-
-// 				 writeBridgeFile();
-
-// 				 // Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-// 				 if(m_currentIt % 600 == 0){
-// 					 takeScreenshot(true, 2);
-// 				 }
-
-// 				 m_elapsedTime += 1.f/FPS;
-// 				 m_currentIt ++;
-// 			 }
-
-// 			 else{ // m_simulation_state == "Stop"
-// 				 window.close();
-// 				 break;
-// 			 }
-// 		 }
-//  }  // end if visualization is active
-
- // NO VISUALIZATION
- // Case 2: the visualization is deactivated. It can be activated/deactivated by giving the right argument to the function (\ref param)
-//  else{
-
 	// Set the initial state to Formation
 	SimulationState state = SimulationState::Formation;
 	printf("Initial state set to formation");
@@ -285,25 +146,36 @@ void Demo::demoLoop(){
 		{
 			case SimulationState::Formation:
 				printf("Case: Formation\n");
+
+				// Update the robot speeds dynamically if relevant
+				if (!m_config.robot.fixed_speed) {
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), 1.0);
+				}
+
 				// This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
 				if(!addRobotWithDelay()){
 					m_stacking = true;
 					printf("robot stacking \n");
-	//					m_bridgeFile.close();
 					break;
 				}
 
-				m_robotController.step(window.getSize().x);
+				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
 
 				// Render if visualization is on
+				if ( m_config.simulation.visualization ) {
+					window.clear(sf::Color::White);
+					m_terrain->drawBody(window);
+					m_robotController.drawRobots(window, m_to_px);
+					window.display();
+				}
 
 
 				writeBridgeFile();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_currentIt % 600 == 0){
+				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
 					takeScreenshot(true, 1);
 				}
 
@@ -319,15 +191,23 @@ void Demo::demoLoop(){
 
 			case SimulationState::Dissolution:
 				printf("Case: Dissolution State\n");
-				m_robotController.step(window.getSize().x);
+				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
+
+				if ( m_config.simulation.visualization ) {
+					window.clear(sf::Color::White);
+					m_terrain->drawBody(window);
+					m_robotController.drawRobots(window, m_to_px);
+					window.display();
+				}
+
 				writeBridgeFile();
 
 				m_robotController.isBridgeDissolved();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_currentIt % 600 == 0){
+				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
 					takeScreenshot(true, 2);
 				}
 
@@ -349,6 +229,11 @@ void Demo::demoLoop(){
 				m_elapsedTimeBridge = m_elapsedTime;
 				m_length = getNewPathLength();
 				m_height = getBridgeHeight();
+
+				// Set robots to use fixed speeds if they were previously using dynamic speeds
+				if (!m_config.robot.fixed_speed) {
+					m_robotController.SetGlobalSpeed(m_config.robot.speed);
+				}
 			}
 			state = SimulationState::Dissolution;
 		}
@@ -387,34 +272,13 @@ void Demo::demoLoop(){
 	}
 	m_bridgeFile.close();
 
-	// while simulation is active
-	// switch case according to what part of the simulation should be happenening
-	// visualize things when appropriate
-	// stop the simulation if an end event is triggered - either runnig out of time or window is closed
-
-	 /* First part of the simulation : bridge formation */
-	//  while (m_elapsedTime < m_config.simulation.bridge_duration )  //&& !m_robotController.isBridgeStable() )
-	// 	 {
-
-	// 	 }
-
-
-
-	//  /* Second part of the simulation : bridge dissolution */
-	//  while (m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration) //&& !m_robotController.isBridgeStable() )
-	// 	 {
-
-
-	// 	 }
-//  }
-
-
- /**  Data processing
-	* Precise the simulation parameters: distance between robots, speed
-	* Get time of the first bridge contact
-	* get time when the last robot enter the stable bridge state
-	* get points of contact for every robot + position and orientation of center
-	* */
+// This comment seems important but I'm not sure where it belongs
+/**  Data processing
+* Precise the simulation parameters: distance between robots, speed
+* Get time of the first bridge contact
+* get time when the last robot enter the stable bridge state
+* get points of contact for every robot + position and orientation of center
+* */
 
 }
 
@@ -423,7 +287,6 @@ bool Demo::addRobotWithDelay(){
 	if(m_nbRobots < m_config.simulation.nb_robots){
 		int final_it = int(60 * m_config.simulation.robot_delay) ; // at 60 fps
 		if(m_it > final_it){
-//			std::cout<< m_config.simulation.robot_delay<<std::endl;
 			if(m_nbRobots && m_robotController.robotStacking(m_robotController.getRobotWithId(m_nbRobots), m_config.simulation.robot_initial_posX)){
 				m_robotController.setBridgeStability(false);
 				return false;
