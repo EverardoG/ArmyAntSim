@@ -31,6 +31,8 @@
 #include <random>
 #include "BoxTerrain.h"
 
+enum SimulationState { Formation, Dissolution, End };
+
 /** @class MyContactListener_v2
  * This class is a listener on the box2D body contacts. In case of contact it calls the RobotController::findContactRobots(contact) method
  * */
@@ -131,7 +133,7 @@ public:
 	 * @param draw should be true if the window has to be drawn beforehand. It is the case when the visualization is deactivated
 	 * @param step is the simulation step: it is either 1 if the simulation is in the bridge formation step or 2 if the simulation is in the bridge dissolution one.
 	 */
-	void takeScreenshot(bool draw, int step);
+	void takeScreenshot(bool draw);
 
 	/**
 	 * Write the file containing the summary of the simulation results
@@ -189,7 +191,8 @@ private:
 	//	std::default_random_engine gen;
 	std::normal_distribution<double> m_gauss_delay;
 
-	std::string m_simulation_state = "Formation"; // Current state of the simulation (bridge formation vs bridge dissolution)
+	// Set the initial state of the simulation
+	SimulationState state = SimulationState::Formation;
 
 protected:
 	b2World* m_world = nullptr; // pointer on the Box2D world

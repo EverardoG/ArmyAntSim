@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 	ValueArg<int> window_y_arg("", "window_y", "Height of the window in pixels", false, 1080, "PIX int 1080");
 
 	// Create File Parameters
-	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "log/", "PATH string \"log\"");
+	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "experiments/log/", "PATH string \"experiments/log/\"");
 	ValueArg<std::string> logfile_name_arg("", "file_name", "Prefix for the names of the result files", false, "exp_", "NAME string \"exp_\"");
 
 	// Add Terrain parameters
@@ -191,8 +191,8 @@ int main(int argc, char* argv[])
 	cfg.window.WINDOW_X_PX = window_x_arg.getValue();
 	cfg.window.WINDOW_Y_PX = window_y_arg.getValue();
 
-	cfg.logfile_name = logfile_path_arg.getValue();
-	cfg.logfile_path = logfile_name_arg.getValue();
+	cfg.logfile_name = logfile_name_arg.getValue();
+	cfg.logfile_path = logfile_path_arg.getValue();
 
 	// Follow rule for v half angle
 	if(cfg.terrain.v_angle > 0){
