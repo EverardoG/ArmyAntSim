@@ -29,46 +29,48 @@ enum e_terrain_type {DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX, V_STEPPER, CLI
 
 class Terrain {
 public:
-	Terrain();
-	Terrain(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
+	Terrain(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength);
 	virtual ~Terrain();
 
 	/*Default terrain is linear ground of width 2*m_runaway located at m_posY from the top of the window*/
 	/** The function create MUST be called if the terrain object has been created via the default constructor (ex when created dynamically with new),
 	 * otherwise no need to use it
 	 * @param world is a pointer on the Box2D world object
-	 * @param window is the SFML window
 	 * @param terrainParam are the terrain parameters (cf Config.h)
 	 * @param WINDOW_X_PX is the x-size of the window. it is used to calculate the scale to convert from meters to pixels
 	 * @param bodylength is the size of a robot. it is used to convert the dimension from body length to m */
 	//TODO remove WINDOW_X_PX parameters and deduce it from window with window.getSize().x
-	virtual void create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength);
+	// virtual void create(b2World* world, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength);
 
 	/**
 	 * Create the Box2D static body of the terrain
 	 * @param world is a pointer on the Box2D world
 	 */
-	virtual void createBody(b2World* world);
+	virtual void createBody(b2World* world) = 0;
 
 	/**
 	 * Draw the body on the window using the SFML library
 	 * @param window is the SFML window where the terrain will be drawn
 	 */
-	virtual void drawBody(sf::RenderWindow& window);
+	virtual void drawBody(sf::RenderWindow& window) = 0;
 
-	virtual void drawBody(sf::RenderTexture& texture);
+	/**
+	 * Draw the body on the texture using the SFML library
+	 * @param texture is the SFML texture where the terrain will be drawn
+	 */
+	virtual void drawBody(sf::RenderTexture& texture) = 0;
 
 	/**
 	 * @return the type of the terrain. Can be DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX or V_STEPPER
 	 */
-	virtual e_terrain_type getType();
+	virtual e_terrain_type getType() = 0;
 
 	/** @return the position of the Top left corner of the V in the box2D world coordinates [m]*/
-	virtual b2Vec2 getTopLeftCorner();
+	b2Vec2 getTopLeftCorner(){return b2Vec2(m_runaway,m_posY);};
 	/** @return the position of the Top right corner of the V in the box2D world coordinates [m]*/
-	virtual b2Vec2 getTopRightCorner();
+	b2Vec2 getTopRightCorner(){return b2Vec2(m_runaway,m_posY);};
 	/** @return the position of the bottom of the V in the box2D world coordinates [m]*/
-	virtual b2Vec2 getBottom();
+	b2Vec2 getBottom(){return b2Vec2(m_runaway,m_posY);};
 
 	/** @return the length of the V when it makes sense, 0 otherwise [m] */
 	double getVLength(){return 0;};
@@ -77,13 +79,14 @@ public:
 	b2Vec2 getPosGoal(){return m_posGoal;};
 
 	/** @return a pointer on the Box2D body of the terrain*/
-	b2Body* getBody();
+	b2Body* getBody(){return m_groundBody;}
+
 
 	/**As the terrain is the first thing that has to be created in the world,
 	 * this method allow to obtain a right scale factor to do the conversion between the real dimensions and the simulated ones
 	 * based on and adapted to the terrain dimensions
 	 * @return the scale to do the conversion from real dimensions (m) to simulated ones (pixels)*/
-	const double getScale();
+	const double getScale(){ return m_M_TO_PX;}
 
 protected:
 	b2Body* m_groundBody; //Pointer on the Box2D body of the terrain
@@ -98,8 +101,6 @@ protected:
 	sf::Vector2<unsigned int> m_windowSize; // Size of the window
 
 	config::sTerrain m_terrainParam; //Terrain configuration parameters described in Config.h file
-private:
-	sf::VertexArray getLines();
 };
 
 #endif /* TERRAIN_H_ */

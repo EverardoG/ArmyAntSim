@@ -9,25 +9,23 @@
 
 #include "CliffTerrain.h"
 
-CliffTerrain::CliffTerrain(){};
-
-CliffTerrain::CliffTerrain(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
+CliffTerrain::CliffTerrain(b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
 	// TODO Auto-generated constructor stub
-	m_M_TO_PX = WINDOW_X_PX /  25.0 * bodyLength;
-	std::cout << "window.getSize().y : " << window.getSize().y << std::endl;
-	std::cout << "m_M_TO_PX : " << m_M_TO_PX << std::endl;
-	std::cout << "window.getSize().y/m_M_TO_PX : " << window.getSize().y/m_M_TO_PX << std::endl;
-	std::cout << "m_height : " << m_height << std::endl;
-	std::cout << "(window.getSize().y/m_M_TO_PX-m_height) : " << (window.getSize().y/m_M_TO_PX-m_height) << std::endl;
-	std::cout << "(window.getSize().y/m_M_TO_PX-m_height)/2 : " << (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
-	std::cout << "window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 : " << window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
+	m_M_TO_PX = m_windowSize.x /  25.0 * bodyLength;
+	// std::cout << "window.getSize().y : " << window.getSize().y << std::endl;
+	// std::cout << "m_M_TO_PX : " << m_M_TO_PX << std::endl;
+	// std::cout << "window.getSize().y/m_M_TO_PX : " << window.getSize().y/m_M_TO_PX << std::endl;
+	// std::cout << "m_height : " << m_height << std::endl;
+	// std::cout << "(window.getSize().y/m_M_TO_PX-m_height) : " << (window.getSize().y/m_M_TO_PX-m_height) << std::endl;
+	// std::cout << "(window.getSize().y/m_M_TO_PX-m_height)/2 : " << (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
+	// std::cout << "window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 : " << window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
 
 	// m_posY=window.getSize().y/m_M_TO_PX/2;
 	m_posY = 5 * bodyLength;
 	// m_posY=0.0;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
+	// m_window_x = window.getSize().x;
+	// m_window_y = window.getSize().y;
 
 }
 
@@ -35,31 +33,31 @@ CliffTerrain::~CliffTerrain() {
 	// TODO Auto-generated destructor stub
 }
 
-void CliffTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
+// void CliffTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
+// 	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
 
-	std::cout << "WINDOW_X_PX : " << WINDOW_X_PX << std::endl;
-	std::cout << "m_width : " << m_width << std::endl;
+// 	std::cout << "WINDOW_X_PX : " << WINDOW_X_PX << std::endl;
+// 	std::cout << "m_width : " << m_width << std::endl;
 
-	// m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
-	m_M_TO_PX = WINDOW_X_PX /  25.0 * bodyLength;
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
+// 	// m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
+// 	m_M_TO_PX = WINDOW_X_PX /  25.0 * bodyLength;
+// 	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
 
-	std::cout << "window.getSize().y : " << window.getSize().y << std::endl;
-	std::cout << "m_M_TO_PX : " << m_M_TO_PX << std::endl;
-	std::cout << "window.getSize().y/m_M_TO_PX : " << window.getSize().y/m_M_TO_PX << std::endl;
-	std::cout << "m_height : " << m_height << std::endl;
-	std::cout << "(window.getSize().y/m_M_TO_PX-m_height) : " << (window.getSize().y/m_M_TO_PX-m_height) << std::endl;
-	std::cout << "(window.getSize().y/m_M_TO_PX-m_height)/2 : " << (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
-	std::cout << "window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 : " << window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
+// 	std::cout << "window.getSize().y : " << window.getSize().y << std::endl;
+// 	std::cout << "m_M_TO_PX : " << m_M_TO_PX << std::endl;
+// 	std::cout << "window.getSize().y/m_M_TO_PX : " << window.getSize().y/m_M_TO_PX << std::endl;
+// 	std::cout << "m_height : " << m_height << std::endl;
+// 	std::cout << "(window.getSize().y/m_M_TO_PX-m_height) : " << (window.getSize().y/m_M_TO_PX-m_height) << std::endl;
+// 	std::cout << "(window.getSize().y/m_M_TO_PX-m_height)/2 : " << (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
+// 	std::cout << "window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 : " << window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2 << std::endl;
 
-	// m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
-	// m_posY=window.getSize().y/m_M_TO_PX/2;
-	m_posY = 5 * bodyLength;
-	// m_posY=0.0;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
-}
+// 	// m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
+// 	// m_posY=window.getSize().y/m_M_TO_PX/2;
+// 	m_posY = 5 * bodyLength;
+// 	// m_posY=0.0;
+// 	m_window_x = window.getSize().x;
+// 	m_window_y = window.getSize().y;
+// }
 
 void CliffTerrain::createBody(b2World* world){
 
