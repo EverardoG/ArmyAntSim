@@ -29,8 +29,28 @@ enum e_terrain_type {DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX, V_STEPPER, CLI
 
 class Terrain {
 public:
-	Terrain(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength);
-	virtual ~Terrain();
+	Terrain(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength){
+		m_bodyLength = bodyLength;
+		m_groundBody = nullptr;
+		if(terrainParam.v_angle > 0){
+			m_angle = terrainParam.v_angle;
+			m_width = tan(terrainParam.v_angle)*2*terrainParam.v_height;
+			m_width =  m_width * bodyLength;
+		}
+		else{
+			m_angle = atan2(terrainParam.v_height, terrainParam.v_width/2);
+			m_width =  terrainParam.v_width * bodyLength;
+		}
+
+		m_height = terrainParam.v_height * bodyLength;
+		m_runaway = terrainParam.runaway * bodyLength;
+
+		m_windowSize.x = windowParam.WINDOW_X_PX;
+		m_windowSize.y = windowParam.WINDOW_Y_PX;
+
+		m_M_TO_PX = m_windowSize.x /  (m_width);
+	};
+	virtual ~Terrain(){};
 
 	/*Default terrain is linear ground of width 2*m_runaway located at m_posY from the top of the window*/
 	/** The function create MUST be called if the terrain object has been created via the default constructor (ex when created dynamically with new),

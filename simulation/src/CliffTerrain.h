@@ -41,8 +41,6 @@ public:
 
 	e_terrain_type getType();
 private:
-	int m_window_x=0;
-	int m_window_y=0;
 	AllPolygons allPolygons;
 };
 

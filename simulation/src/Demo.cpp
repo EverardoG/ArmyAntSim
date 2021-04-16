@@ -656,7 +656,7 @@ void Demo::takeScreenshot(bool draw){
 	m_terrain->drawBody(texture);
 
 	// Draw the robots onto the texture
-	// m_robotController.drawRobots(texture, m_to_px);
+	m_robotController.drawRobots(texture, m_to_px);
 
 	// Finalize the texture
 	texture.display();
