@@ -43,6 +43,8 @@ public:
 	 */
 	void drawBody(sf::RenderWindow& window);
 
+	void drawBody(sf::RenderTexture& texture);
+
 	/** return the terrain type, from this class it returns V2BL_TERRAIN */
 	e_terrain_type getType();
 
@@ -54,6 +56,8 @@ public:
 	b2Vec2 getBottom();
 //
 //	double getVLength();
+private:
+	sf::VertexArray getLines();
 };
 
 #endif /* RAMP_H_ */

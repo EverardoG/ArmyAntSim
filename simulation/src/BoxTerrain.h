@@ -28,10 +28,14 @@ public:
 	/// @param wall_w_m, wall_h_m: configuration of the walls, they are usually defined in the config file.
 	void drawBody(	sf::RenderWindow& window);
 
+	void drawBody(  sf::RenderTexture& texture);
+
 	e_terrain_type getType();
 private:
 	int m_window_x=0;
 	int m_window_y=0;
+
+	sf::VertexArray getLines();
 };
 
 #endif /* BOXTERRAIN_H_ */

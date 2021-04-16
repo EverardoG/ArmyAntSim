@@ -79,7 +79,7 @@ void CliffTerrain::createBody(b2World* world){
 	Point cliffLeftPoint = b2Vec2(0.0, cliffTop);
 	Point cliffRightTopPoint = b2Vec2(cliffRightEdge, cliffTop);
 	Point cliffRightBottomPoint = b2Vec2(cliffRightEdge, groundBottomEdge);
-	Point cliffEndPoint = b2Vec2(m_window_x/m_M_TO_PX, groundBottomEdge);
+	Point cliffEndPoint = b2Vec2(m_window_x/m_M_TO_PX + 2 * m_bodyLength, groundBottomEdge);
 
 	// Point arbitraryPoint = b2Vec2(1.0, 5.0);
 
@@ -161,6 +161,28 @@ void CliffTerrain::drawBody(sf::RenderWindow& window){
 		}
 
 		window.draw(lines);
+	}
+}
+
+void CliffTerrain::drawBody(sf::RenderTexture& texture){
+	// std::cout << "for (Polygon polygon : allPolygons) {" << std::endl;
+
+	for (Polygon polygon : allPolygons) {
+	// 	std::cout << "Polygon" << std::endl;
+	// // 	// Create our lines object
+	// // 	std::cout << "sf:: VertexArray lines(sf::LinesStrip, allPolygons.size());" << std::endl;
+		sf::VertexArray lines(sf::LinesStrip, polygon.size());
+	// 	std::cout << "lines of size " << polygon.size() << std::endl;
+
+	    // Populate lines with points from the polygon
+		for (int ptcount = 0; ptcount < polygon.size(); ptcount++) {
+			// Be sure to turn meter measurements from points to pixel measurements for rendering
+			lines[ptcount].position = sf::Vector2f(polygon[ptcount].x*m_M_TO_PX, polygon[ptcount].y*m_M_TO_PX);
+			lines[ptcount].color = sf::Color::Black;
+			// std::cout << "Line " << ptcount << ": " << "x = " << polygon[ptcount].x << " | y = " << polygon[ptcount].y << std::endl;
+		}
+
+		texture.draw(lines);
 	}
 }
 

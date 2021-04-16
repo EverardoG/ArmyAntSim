@@ -69,6 +69,8 @@ public:
 	 */
 	void drawRobots(sf::RenderWindow& window, double m_to_px);
 
+	void drawRobots(sf::RenderTexture& texture, double m_to_px);
+
 	/**
 	 * This is the function used in the contactListener.
 	 * It determines if a contact must lead to a grip creation,
@@ -240,7 +242,7 @@ public:
 	/**
 	 *
 	*/
-	double calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp);
+	double calculateSpeedsToGoal(b2Vec2 m_goal_pos);
 
 	/**
 	 * Flag used to notify when a new robot enter the bridge state.

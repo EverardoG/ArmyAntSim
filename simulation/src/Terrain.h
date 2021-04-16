@@ -56,6 +56,8 @@ public:
 	 */
 	virtual void drawBody(sf::RenderWindow& window);
 
+	virtual void drawBody(sf::RenderTexture& texture);
+
 	/**
 	 * @return the type of the terrain. Can be DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX or V_STEPPER
 	 */
@@ -93,8 +95,11 @@ protected:
 	double m_angle; //Angle of the obstacle in the terrain. In the case of the default terrain it doesn't make sense and is set to 0
 	double m_posY=2.5; //In the case of the default terrain it represents the distance from the top of the window/world to the ground.
 	b2Vec2 m_posGoal = b2Vec2(0.0,0.0); //Position of the goal for the robots
+	sf::Vector2<unsigned int> m_windowSize; // Size of the window
 
 	config::sTerrain m_terrainParam; //Terrain configuration parameters described in Config.h file
+private:
+	sf::VertexArray getLines();
 };
 
 #endif /* TERRAIN_H_ */

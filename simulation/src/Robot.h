@@ -57,16 +57,24 @@ public:
 	 * @param m_to_pix is the conversion factor used to transform the meters to pixels
 	 * */
 	void drawBody(sf::RenderWindow& window, double m_to_pix);
+
+	void drawBody(sf::RenderTexture& texture, double m_to_pix);
+
 	/** Use SFML to to draw all the joints of the robot on the window
 	 * @param window: active SFML window
 	 * @param m_to_pix is the conversion factor used to transform the meters to pixels
 	 * */
 	void drawJoint(sf::RenderWindow& window, double m_to_px);
+
+	void drawJoint(sf::RenderTexture& texture, double m_to_px);
+
 	/** Use SFML to to draw the robot's grippers on the window
 	 * @param window: active SFML window
 	 * @param m_to_pix is the conversion factor used to transform the meters to pixels
 	 * */
 	void drawGripJoint(sf::RenderWindow& window, double m_to_px);
+
+	void drawGripJoint(sf::RenderTexture& texture, double m_to_px);
 
 	/** First of the three different methods to move the robot body in the clockwise direction,
 	 * This is the one used in the current implementation, the other two functions are alternative way to move the body but are currently not used

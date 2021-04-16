@@ -38,7 +38,7 @@ namespace fs = std::filesystem;
 
 bool distance_from_bottom = false;
 
-bool gaussian_delay = true;
+// bool gaussian_delay = true;
 bool periodic_delay = false;
 
 Demo::Demo(b2World* world, config::sConfig cfg){
@@ -105,7 +105,7 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	m_robotController.setScale(m_to_px);
 	myContactListener = new MyContactListener_v2(m_robotController);
 
-	if(gaussian_delay){
+	if(m_config.simulation.gaussian_delay){
 		m_gauss_delay = std::normal_distribution<double>(m_config.simulation.robot_delay,m_std_dev);
 		m_seed = m_rd();// 2954034953.000000 ;//
 		m_gen.seed(m_seed);
@@ -140,15 +140,13 @@ void Demo::demoLoop(){
 		switch (state)
 		{
 			case SimulationState::Formation:
-				printf("Case: Formation\n");
 
 				// Update the robot speeds dynamically if relevant
-				if (!m_config.robot.fixed_speed) {
-					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), 1.0);
+				if (m_config.robot.dynamic_speed) {
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal());
 				}
 
-				// This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
-				if(!addRobotWithDelay()){
+				if(!addRobot()){
 					m_stacking = true;
 					printf("robot stacking \n");
 					break;
@@ -170,7 +168,7 @@ void Demo::demoLoop(){
 				writeBridgeFile();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
+				if(m_currentIt % 600 == 0){
 					takeScreenshot(true);
 				}
 
@@ -185,7 +183,6 @@ void Demo::demoLoop(){
 				break;
 
 			case SimulationState::Dissolution:
-				printf("Case: Dissolution State\n");
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
@@ -202,7 +199,7 @@ void Demo::demoLoop(){
 				m_robotController.isBridgeDissolved();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
+				if(m_currentIt % 600 == 0){
 					takeScreenshot(true);
 				}
 
@@ -225,7 +222,7 @@ void Demo::demoLoop(){
 				m_height = getBridgeHeight();
 
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
-				if (!m_config.robot.fixed_speed) {
+				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
 			}
@@ -274,6 +271,15 @@ void Demo::demoLoop(){
 
 }
 
+bool Demo::addRobot() {
+	if ( m_config.simulation.use_delay ) {
+		return addRobotWithDelay();
+	}
+	else {
+		return addRobotWithDistance();
+	}
+}
+
 bool Demo::addRobotWithDelay(){
 
 	if(m_nbRobots < m_config.simulation.nb_robots){
@@ -285,7 +291,7 @@ bool Demo::addRobotWithDelay(){
 			}
 			m_robotController.createRobot(m_world, 0, m_config.simulation.robot_initial_posX, m_config.simulation.robot_initial_posY);
 			m_it = 0;
-			if(gaussian_delay){
+			if(m_config.simulation.gaussian_delay){
 				m_config.simulation.robot_delay=std::max(m_gauss_delay(m_gen), 1.5);
 				std::cout<<"delay rand= "<< m_config.simulation.robot_delay<<std::endl;
 			}
@@ -483,7 +489,7 @@ void Demo::writeResultFile(){
 	/** Simulation parameters */
 	m_logFile << "Simulation parameters: \n";
 //	m_logFile << "	Robots entry point: "<< std::to_string(m_delay) << "s\n";
-	if(gaussian_delay){
+	if(m_config.simulation.gaussian_delay){
 		m_logFile << "	Gaussian delay "<< " \n";
 		m_logFile << "		standard deviation "<< m_std_dev << " \n";
 		m_logFile << std::fixed << "		seed "<< m_seed << " \n";
@@ -613,25 +619,57 @@ void Demo::writeBridgeFile(){
 
 void Demo::takeScreenshot(bool draw){
 
-	if(draw){
-		window.clear(sf::Color::White);
-		m_terrain->drawBody(window);
-		m_robotController.drawRobots(window, m_to_px);
-	}
+	// Change this so that it renders an image using the dimensions for the window
+	// and saves that image
+	// m_config.window.WINDOW_X_PX
+	// m_config.window.WINDOW_Y_PX
 
-	if(state == SimulationState::Formation){
-	    sf::Image Screen = window.capture();
-	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_formation_" + std::to_string(m_currentIt) + ".jpg";
-	    std::cout << "[Step 1] About to save image " << filename << std::endl;
-		// Screen.saveToFile("whatever.jpg");
-		Screen.saveToFile(filename);
-	}
+	// Create a white canvas
+	// sf::Image screenshot;
+	// screenshot.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX, sf::Color::Black);
 
-	else if(state == SimulationState::Dissolution){
-	    sf::Image Screen = window.capture();
-	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_dissolution_" + std::to_string(m_currentIt) + ".jpg";
-	    std::cout << "[Step 2] About to save image " << filename << std::endl;
-		Screen.saveToFile(filename);
-	}
+	// Create a render texture
+	// sf::RenderTexture texture;
+	// texture.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX);
+
+	// Draw the terrain onto the texture
+	// m_terrain->drawBody(texture);
+	// Draw robots onto the texture
+
+	// copy the render texture to an image
+
+	// save the image
+
+	// if(draw){
+	// 	window.clear(sf::Color::White);
+	// 	m_terrain->drawBody(window);
+	// 	m_robotController.drawRobots(window, m_to_px);
+	// }
+
+	// Create a white render texture
+	sf::RenderTexture texture;
+	texture.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX);
+	texture.clear(sf::Color::White);
+
+	// Draw the terrain onto the texture
+	m_terrain->drawBody(texture);
+
+	// Draw the robots onto the texture
+	// m_robotController.drawRobots(texture, m_to_px);
+
+	// Finalize the texture
+	texture.display();
+
+	// Convert the texture into an image
+	sf::Image image = texture.getTexture().copyToImage();
+
+	// Name the image according to the simulation state
+	std::string filename = m_config.logfile_path + m_config.logfile_name;
+	if ( state == SimulationState::Formation ) { filename = filename + "_formation_"; }
+	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution_"; }
+	filename = filename + std::to_string(m_currentIt) + ".jpg";
+
+	// Save the image
+	image.saveToFile(filename);
 
 }

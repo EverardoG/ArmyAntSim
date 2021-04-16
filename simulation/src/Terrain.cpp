@@ -29,6 +29,7 @@ Terrain::Terrain(b2World* world, sf::RenderWindow& window,  config::sTerrain ter
 	m_runaway = terrainParam.runaway * bodyLength;
 
 	m_M_TO_PX = WINDOW_X_PX /  (m_width);
+	m_windowSize = window.getSize();
 }
 
 Terrain::~Terrain() {
@@ -70,15 +71,24 @@ void Terrain::createBody(b2World* world){
 
 }
 
-void Terrain::drawBody(sf::RenderWindow& window){
+sf::VertexArray Terrain::getLines() {
 	sf::VertexArray lines(sf::LinesStrip, 2);
 	lines[0].position = sf::Vector2f(0, m_posY*m_M_TO_PX);
 	lines[1].position = sf::Vector2f(2*m_runaway*m_M_TO_PX, m_posY*m_M_TO_PX);
 
 	lines[0].color = sf::Color::Black;
 	lines[1].color = sf::Color::Black;
+	return lines;
+}
 
+void Terrain::drawBody(sf::RenderWindow& window){
+	sf::VertexArray lines = getLines();
 	window.draw(lines);
+}
+
+void Terrain::drawBody(sf::RenderTexture& texture){
+	sf::VertexArray lines = getLines();
+	texture.draw(lines);
 }
 
 b2Body* Terrain::getBody(){

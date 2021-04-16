@@ -65,6 +65,8 @@ public:
 	Demo(b2World* m_world, config::sConfig cfg);
 	virtual ~Demo();
 
+	bool addRobot();
+
 	/**
 	 * Create a new robot after a given delay defined by m_config.simulation.robot_delay (which has been obtained as an argument of the Demo object creation)
 	 * until the maximum number of robots have been reached.
