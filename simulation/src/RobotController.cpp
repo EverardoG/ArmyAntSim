@@ -124,6 +124,14 @@ void RobotController::drawRobots(sf::RenderWindow& window, double m_to_px){
 	}
 }
 
+void RobotController::drawRobots(sf::RenderTexture& texture, double m_to_px){
+	int i =0;
+	for (i=0; i<m_robotVector.size(); i++){
+		m_robotVector[i]->drawBody(texture, m_to_px);
+		m_robotVector[i]->drawGripJoint(texture, m_to_px);
+	}
+}
+
 
 void RobotController::findContactRobots(b2Contact* contact){
 	int i =0;
@@ -370,6 +378,7 @@ void RobotController::removeRobot(){
 
 void RobotController::robotOut(double end_x, int id){
 	int pos = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
+	// std::cout << "pos: " << pos << " | end_x: " << end_x << std::endl;
 	if(pos > end_x){
 		m_robotToDestroy.push_back(id);
 //		removeRobot(id);
@@ -446,12 +455,12 @@ void RobotController::SetGlobalSpeed(double desired_speed){
 // also option for dynamic speed vs fixed speed in config
 // maybe change delay instead of speed (this is more portable for real robot)
 
-double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp){
+double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 	// Calculates the speed for every robot so that the robots move toward the desired goal
 	for (int i=0; i<m_robotVector.size(); i++){
 		float desired_x = m_goal_pos.x;
 		float error_x = desired_x - m_robotVector[i]->getPosition().x;
-		float desired_speed = 0.4 * log(error_x) + 2*PI;
+		float desired_speed = m_controllerParam.gain * log(error_x) + m_robotParam.speed;
 		if(isnan(desired_speed)){
 			desired_speed = 0.1;
 		}
@@ -464,7 +473,7 @@ double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float Kp){
 			desired_speed = m_robotParam.speed;
 		}
 
-		std::cout << desired_speed << std::endl;
+		// std::cout << desired_speed << std::endl;
 		m_robotVector[i]->setSpeed(desired_speed);
 	}
 }

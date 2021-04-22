@@ -12,13 +12,12 @@
 
 class VStepper: public Terrain {
 public:
-	VStepper();
-	VStepper(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
+	VStepper(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength);
 	virtual ~VStepper();
 
-	void create(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
 	void createBody(b2World* world);
 	void drawBody(sf::RenderWindow& window);
+	void drawBody(sf::RenderTexture& texture);
 
 	e_terrain_type getType();
 };

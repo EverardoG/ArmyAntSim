@@ -18,21 +18,6 @@ int print_help_and_exit(TCLAP::CmdLineInterface& cmd);
 
 using namespace TCLAP;
 
-// class CustomHelpOutput : public TCLAP::StdOutput {
-// 	public:
-// 		virtual void usage(TCLAP::CmdLineInterface& _cmd) override {
-// 			std::cout << "my program is called " << _cmd.getProgramName() << std::endl;
-// 		}
-// };
-
-// inline void CmdLine::setOutput(CmdLineOutput* co)
-// {
-// 	if (!_userSetOutput)
-// 		delete _output;
-// 	_userSetOutput = true;
-// 	_output = co;
-// }
-
 int main(int argc, char* argv[])
 {
 	//TODO: create a demo class which take the nb of robot, the scene ... in arguments to do all the steps
@@ -72,7 +57,6 @@ int main(int argc, char* argv[])
 	ValueArg<float>       angle_arg("", "v_half_angle", "Half angle of the v shape in v_terrain in robot body lengths. When angle > 0, width is not taken into account", false, 50/RAD_TO_DEG, "DEG float 50/RAD_TO_DEG");
 
 	// Create Simulation Parameters
-	ValueArg<float>       gravity_arg("g", "gravity", "Magnitude of gravity in simulation in m/s^2", false, 0.0, "ACCEL float 0.0");
 	ValueArg<float>       robot_distance_arg("", "robot_distance", "Distance between the creation of two successive robots in s", false, 3.5, "BL float 3.5");
 	ValueArg<float>       robot_phase_arg("","robot_phase", "Phase shift between two successive robots in rad", false, 0.0, "RAD float 0.0");
 	ValueArg<float>       robot_delay_arg("","robot_delay", "Delay between the creation of two successive robots in s",false,3.25,"SEC float 3.25");
@@ -82,6 +66,9 @@ int main(int argc, char* argv[])
 	ValueArg<float>       sim_duration_arg("t", "simulation_duration", "Duration of the bridge part of the simulation", false, 100, "SEC float 100");
 	ValueArg<float>       dis_duration_arg("", "dissolution_duration", "Duration of the dissolution part of the simulation", false, 200, "SEC float 200");
 	ValueArg<bool>        visual_arg("", "enable_visualization", "Play the visualizer for the simulation", false, true, "BOOL bool true");
+	ValueArg<float>       gravity_arg("g", "gravity", "Magnitude of gravity in simulation in m/s^2", false, 9.8, "ACCEL float 9.8");
+	ValueArg<bool>        use_delay_arg("","use_delay", "Whether to spawn robots with time delay or distance delay. True: delay, False: distance", false, true, "BOOL bool true");
+	ValueArg<bool>        gaussian_delay_arg("", "gaussian_delay", "Whether to make time delay a guassian distribution or the same for each robot. True: Gaussian, False: Same for each", false, true, "BOOL bool true");
 
 	// Create Controller Parameters
 	ValueArg<float> angle_limit_arg("a", "limit_angle", "Minimum angle before robot is allowed to grab", false, PI/2, "RAD float PI/2");
@@ -90,11 +77,12 @@ int main(int argc, char* argv[])
 	ValueArg<float> push_delay_arg("", "push_delay", "Maximum duration of the movement before a robot is considered as pushing in s. The robot creates a grip after this time.", false, 1.0,"SEC float 1.0");
 	ValueArg<int> max_robots_arg("","max_robots", "Maximum number of robots in the window", false, 50, "NUM int 50");
 	ValueArg<float> stable_time_arg("", "stability_condition", "Time after which a bridge is considered stable in s", false, 60, "SEC float 60");
+	ValueArg<float> gain_arg("", "kp", "Gain applied to dynamic speed", false, 0.4, "FLOAT float 0.4");
 
 	// Create Robots Parameters
 	ValueArg<float> body_length_arg("","body_length", "Body length of the robot in m", false, 1.02, "METERS float 1.02");
 	ValueArg<float> speed_arg("v", "robot_speed", "Rotational speed of the robot in rad/s", false, 2*PI, "RAD/S float 2*PI");
-	ValueArg<bool> fixed_speed_arg("", "fixed_speed", "True: Robots have a fixed speed. False: Each robot has a dynamic speed.", false, true, "BOOL bool true");
+	ValueArg<bool>  dynamic_speed_arg("", "dynamic_speed", "True: Each robot has a dynamic speed False: Robots have a fixed speed.", false, false, "BOOL bool false");
 	ValueArg<float> kp_arg("", "proportional_control", "Proportional control gain for dynamic speed", false, 1.0, "VALUE float 1.0");
 	ValueArg<float> torque_arg("", "torque", "Torque of the robot joints", false, 30.0f, "NEWTONS float 30.0f");
 
@@ -103,7 +91,7 @@ int main(int argc, char* argv[])
 	ValueArg<int> window_y_arg("", "window_y", "Height of the window in pixels", false, 1080, "PIX int 1080");
 
 	// Create File Parameters
-	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "log/", "PATH string \"log\"");
+	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "experiments/log/", "PATH string \"experiments/log/\"");
 	ValueArg<std::string> logfile_name_arg("", "file_name", "Prefix for the names of the result files", false, "exp_", "NAME string \"exp_\"");
 
 	// Add Terrain parameters
@@ -115,6 +103,8 @@ int main(int argc, char* argv[])
 
 	// Add Simulation parameters
 	cmd.add(gravity_arg);
+	cmd.add(use_delay_arg);
+	cmd.add(gaussian_delay_arg);
 	cmd.add(robot_distance_arg);
 	cmd.add(robot_phase_arg);
 	cmd.add(robot_delay_arg);
@@ -132,11 +122,12 @@ int main(int argc, char* argv[])
 	cmd.add(push_delay_arg);
 	cmd.add(max_robots_arg);
 	cmd.add(stable_time_arg);
+	cmd.add(gain_arg);
 
 	// Add Robots parameters
 	cmd.add(body_length_arg);
 	cmd.add(speed_arg);
-	cmd.add(fixed_speed_arg);
+	cmd.add(dynamic_speed_arg);
 	cmd.add(kp_arg);
 	cmd.add(torque_arg);
 
@@ -165,6 +156,8 @@ int main(int argc, char* argv[])
 	cfg.terrain.v_angle = angle_arg.getValue();
 
 	cfg.simulation.gravity = gravity_arg.getValue();
+	cfg.simulation.use_delay = use_delay_arg.getValue();
+	cfg.simulation.gaussian_delay = gaussian_delay_arg.getValue();
 	cfg.simulation.robot_distance = robot_distance_arg.getValue();
 	cfg.simulation.robot_phase = robot_phase_arg.getValue();
 	cfg.simulation.robot_delay = robot_delay_arg.getValue();
@@ -181,9 +174,10 @@ int main(int argc, char* argv[])
 	cfg.controller.time_before_pushing = push_delay_arg.getValue();
 	cfg.controller.max_robot_window = max_robots_arg.getValue();
 	cfg.controller.stability_condition = stable_time_arg.getValue();
+	cfg.controller.gain = gain_arg.getValue();
 
 	cfg.robot.body_length = body_length_arg.getValue();
-	cfg.robot.fixed_speed = fixed_speed_arg.getValue();
+	cfg.robot.dynamic_speed = dynamic_speed_arg.getValue();
 	cfg.robot.speed = speed_arg.getValue();
 	cfg.robot.proportional_control = kp_arg.getValue();
 	cfg.robot.torque = torque_arg.getValue();
@@ -191,8 +185,8 @@ int main(int argc, char* argv[])
 	cfg.window.WINDOW_X_PX = window_x_arg.getValue();
 	cfg.window.WINDOW_Y_PX = window_y_arg.getValue();
 
-	cfg.logfile_name = logfile_path_arg.getValue();
-	cfg.logfile_path = logfile_name_arg.getValue();
+	cfg.logfile_name = logfile_name_arg.getValue();
+	cfg.logfile_path = logfile_path_arg.getValue();
 
 	// Follow rule for v half angle
 	if(cfg.terrain.v_angle > 0){
@@ -325,6 +319,7 @@ int print_help_and_exit(CmdLineInterface& cmd)
 		else if (intro == "--configuration_path <PATH>") {std::cout << "\n  Config: " << std::endl;}
 		else if (intro == "-y <TERRAIN>") {std::cout << "\n  Terrain:" << std::endl;}
 		else if (intro == "--robot_distance <BL>") {std::cout << "\n  Simulation:" << std::endl;}
+		else if (intro == "-a <RAD>") {std::cout << "\n  Controller:" << std::endl;}
 		else if (intro == "--body_length <METERS>") {std::cout << "\n  Robot:" << std::endl;}
 		else if (intro == "--window_x <PIX>") {std::cout << "\n  Window:" << std::endl;}
 		else if (intro == "--file_path <PATH>") {std::cout << "\n  File:" << std::endl;}

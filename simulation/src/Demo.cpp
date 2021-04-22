@@ -33,13 +33,13 @@
 #include <thread>
 #include <math.h>
 #include <iostream>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 bool distance_from_bottom = false;
 
-bool gaussian_delay = true;
+// bool gaussian_delay = true;
 bool periodic_delay = false;
-
-enum SimulationState { Formation, Dissolution, End };
 
 Demo::Demo(b2World* world, config::sConfig cfg){
 	m_world = world;
@@ -56,29 +56,37 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 
 	std::cout << "Terrain type: " << m_config.terrain.type << std::endl;
 
-	// TODO: This is where terrain type will be set
+	// TODO: Add some sort of check that the user entered a valid terrain
+
 	if (m_config.terrain.type == "v_terrain") {
-		m_terrain = new Vterrain;
+		m_terrain = new Vterrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 	else if (m_config.terrain.type == "v2bl_terrain") {
-		m_terrain = new V2BLTerrain;
+		m_terrain = new V2BLTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 	else if (m_config.terrain.type == "ramp") {
-		m_terrain = new Ramp;
+		m_terrain = new Ramp(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 	else if (m_config.terrain.type == "box") {
-		m_terrain = new BoxTerrain;
+	 	m_terrain = new BoxTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 	else if (m_config.terrain.type == "v_stepper") {
-		m_terrain = new VStepper;
+		m_terrain = new VStepper(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 	else if (m_config.terrain.type == "cliff") {
-		m_terrain = new CliffTerrain;
+		m_terrain = new CliffTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "default") {
+		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else {
+		std::cout << "No terrain specified or invalid terrain specified. Using default terrain." << std::endl;
+		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 
-	std::cout << "m_config.window.WINDOW_X_PX: " << m_config.window.WINDOW_X_PX << std::endl;
+	// std::cout << "m_config.window.WINDOW_X_PX: " << m_config.window.WINDOW_X_PX << std::endl;
 
-	m_terrain->create(m_world, window, m_config.terrain, m_config.window.WINDOW_X_PX, m_config.robot.body_length );
+	// m_terrain->create(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	m_terrain->createBody(m_world);
 	m_terrain->drawBody(window);
 	m_to_px = m_terrain->getScale();
@@ -105,7 +113,7 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	m_robotController.setScale(m_to_px);
 	myContactListener = new MyContactListener_v2(m_robotController);
 
-	if(gaussian_delay){
+	if(m_config.simulation.gaussian_delay){
 		m_gauss_delay = std::normal_distribution<double>(m_config.simulation.robot_delay,m_std_dev);
 		m_seed = m_rd();// 2954034953.000000 ;//
 		m_gen.seed(m_seed);
@@ -128,11 +136,6 @@ void Demo::init(){
 //Main demoLoop called in the main file: The demoLoop is structured in two cases: if the visualization is activated or not.
 // Both cases are then almost identical apart from the simulation part.
 void Demo::demoLoop(){
-
-	// Set the initial state to Formation
-	SimulationState state = SimulationState::Formation;
-	printf("Initial state set to formation");
-
 	if (m_config.simulation.visualization) {
 		printf("Visualization is on\n");
 	}
@@ -145,15 +148,13 @@ void Demo::demoLoop(){
 		switch (state)
 		{
 			case SimulationState::Formation:
-				printf("Case: Formation\n");
 
 				// Update the robot speeds dynamically if relevant
-				if (!m_config.robot.fixed_speed) {
-					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), 1.0);
+				if (m_config.robot.dynamic_speed) {
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal());
 				}
 
-				// This is where the traffic control is defined: either using addRobotWithDelay() or addRobotWithDistance()
-				if(!addRobotWithDelay()){
+				if(!addRobot()){
 					m_stacking = true;
 					printf("robot stacking \n");
 					break;
@@ -175,8 +176,8 @@ void Demo::demoLoop(){
 				writeBridgeFile();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
-					takeScreenshot(true, 1);
+				if(m_currentIt % 600 == 0){
+					takeScreenshot(true);
 				}
 
 				m_elapsedTime += 1.f/FPS;
@@ -190,7 +191,6 @@ void Demo::demoLoop(){
 				break;
 
 			case SimulationState::Dissolution:
-				printf("Case: Dissolution State\n");
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
@@ -207,15 +207,14 @@ void Demo::demoLoop(){
 				m_robotController.isBridgeDissolved();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
-				if(m_config.simulation.visualization && m_currentIt % 600 == 0){
-					takeScreenshot(true, 2);
+				if(m_currentIt % 600 == 0){
+					takeScreenshot(true);
 				}
 
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
 				break;
 		}
-		printf("Out of case\n");
 		// Update the simulation state
 		if ( m_elapsedTime < m_config.simulation.bridge_duration ) {
 			state = SimulationState::Formation;
@@ -231,7 +230,7 @@ void Demo::demoLoop(){
 				m_height = getBridgeHeight();
 
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
-				if (!m_config.robot.fixed_speed) {
+				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
 			}
@@ -250,11 +249,9 @@ void Demo::demoLoop(){
 					window.close();
 				}
 				// "s" event: take a screenshot
+				// change this to use takeScreenshot
 				if (event.key.code == sf::Keyboard::S) {
-					sf::Image Screen = window.capture();
-					std::string name = "screenshot_" + std::to_string(m_elapsedTime) + ".jpg";
-					std::cout << "[demoLoop] About to save image " << name << std::endl;
-					Screen.saveToFile(name);
+					takeScreenshot(true);
 				}
 			}
 
@@ -282,6 +279,15 @@ void Demo::demoLoop(){
 
 }
 
+bool Demo::addRobot() {
+	if ( m_config.simulation.use_delay ) {
+		return addRobotWithDelay();
+	}
+	else {
+		return addRobotWithDistance();
+	}
+}
+
 bool Demo::addRobotWithDelay(){
 
 	if(m_nbRobots < m_config.simulation.nb_robots){
@@ -293,7 +299,7 @@ bool Demo::addRobotWithDelay(){
 			}
 			m_robotController.createRobot(m_world, 0, m_config.simulation.robot_initial_posX, m_config.simulation.robot_initial_posY);
 			m_it = 0;
-			if(gaussian_delay){
+			if(m_config.simulation.gaussian_delay){
 				m_config.simulation.robot_delay=std::max(m_gauss_delay(m_gen), 1.5);
 				std::cout<<"delay rand= "<< m_config.simulation.robot_delay<<std::endl;
 			}
@@ -310,7 +316,7 @@ bool Demo::addRobotWithDelay(){
 				else{
 					m_config.simulation.robot_phase = moduloAngle(m_robotController.getRobot(0)->getAngle(), PI);
 				}
-				takeScreenshot(true, 1);
+				takeScreenshot(true);
 			}
 		}
 		else{
@@ -468,6 +474,7 @@ double Demo::getNewPathLength(){
 
 void Demo::writeResultFile(){
 
+	fs::create_directories(m_config.logfile_path);
 	std::string filename = m_config.logfile_path + m_config.logfile_name + "_result.txt";
 	std::cout<<filename<<std::endl;
 	m_logFile.open(filename);
@@ -490,7 +497,7 @@ void Demo::writeResultFile(){
 	/** Simulation parameters */
 	m_logFile << "Simulation parameters: \n";
 //	m_logFile << "	Robots entry point: "<< std::to_string(m_delay) << "s\n";
-	if(gaussian_delay){
+	if(m_config.simulation.gaussian_delay){
 		m_logFile << "	Gaussian delay "<< " \n";
 		m_logFile << "		standard deviation "<< m_std_dev << " \n";
 		m_logFile << std::fixed << "		seed "<< m_seed << " \n";
@@ -618,27 +625,59 @@ void Demo::writeBridgeFile(){
 	}
 }
 
-void Demo::takeScreenshot(bool draw, int step){
+void Demo::takeScreenshot(bool draw){
 
-	if(draw){
-		window.clear(sf::Color::White);
-		m_terrain->drawBody(window);
-		m_robotController.drawRobots(window, m_to_px);
-	}
+	// Change this so that it renders an image using the dimensions for the window
+	// and saves that image
+	// m_config.window.WINDOW_X_PX
+	// m_config.window.WINDOW_Y_PX
 
-	if(step==1){
-	    sf::Image Screen = window.capture();
-	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_formation_" + std::to_string(m_currentIt) + ".jpg";
-	    std::cout << "[Step 1] About to save image " << filename << std::endl;
-		// Screen.saveToFile("whatever.jpg");
-		Screen.saveToFile(filename);
-	}
+	// Create a white canvas
+	// sf::Image screenshot;
+	// screenshot.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX, sf::Color::Black);
 
-	else if(step==2){
-	    sf::Image Screen = window.capture();
-	    std::string filename = m_config.logfile_path + m_config.logfile_name + "_dissolution_" + std::to_string(m_currentIt) + ".jpg";
-	    std::cout << "[Step 2] About to save image " << filename << std::endl;
-		Screen.saveToFile(filename);
-	}
+	// Create a render texture
+	// sf::RenderTexture texture;
+	// texture.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX);
+
+	// Draw the terrain onto the texture
+	// m_terrain->drawBody(texture);
+	// Draw robots onto the texture
+
+	// copy the render texture to an image
+
+	// save the image
+
+	// if(draw){
+	// 	window.clear(sf::Color::White);
+	// 	m_terrain->drawBody(window);
+	// 	m_robotController.drawRobots(window, m_to_px);
+	// }
+
+	// Create a white render texture
+	sf::RenderTexture texture;
+	texture.create(m_config.window.WINDOW_X_PX, m_config.window.WINDOW_Y_PX);
+	texture.clear(sf::Color::White);
+
+	// Draw the terrain onto the texture
+	m_terrain->drawBody(texture);
+
+	// Draw the robots onto the texture
+	m_robotController.drawRobots(texture, m_to_px);
+
+	// Finalize the texture
+	texture.display();
+
+	// Convert the texture into an image
+	sf::Image image = texture.getTexture().copyToImage();
+
+	// Name the image according to the simulation state
+	std::string filename = m_config.logfile_path + m_config.logfile_name;
+	if ( state == SimulationState::Formation ) { filename = filename + "_formation_"; }
+	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution_"; }
+	filename = filename + std::to_string(m_currentIt) + ".jpg";
+
+	// Save the image
+	image.saveToFile(filename);
 
 }

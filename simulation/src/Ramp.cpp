@@ -7,25 +7,25 @@
 
 #include "Ramp.h"
 
-Ramp::Ramp() {
-	// TODO Auto-generated constructor stub
+// Ramp::Ramp() {
+// 	// TODO Auto-generated constructor stub
 
-}
+// }
 
-Ramp::Ramp(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
-	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway);
+Ramp::Ramp(b2World* world,  config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
+	m_M_TO_PX = m_windowSize.x /  (2*m_runaway);
 }
 
 Ramp::~Ramp() {
 	// TODO Auto-generated destructor stub
 }
 
-void Ramp::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
-	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway);
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
-}
+// void Ramp::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
+// 	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
+// 	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway);
+// 	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
+// }
 
 void Ramp::createBody(b2World* world){
 
@@ -53,7 +53,7 @@ void Ramp::createBody(b2World* world){
 
 }
 
-void Ramp::drawBody(sf::RenderWindow& window){
+sf::VertexArray Ramp::getLines() {
 	sf::VertexArray lines(sf::LinesStrip, 4);
 	lines[0].position = sf::Vector2f(0, m_posY*m_M_TO_PX);
 	lines[1].position = sf::Vector2f(m_runaway*m_M_TO_PX, m_posY*m_M_TO_PX);
@@ -66,7 +66,17 @@ void Ramp::drawBody(sf::RenderWindow& window){
 	lines[2].color = sf::Color::Black;
 	lines[3].color = sf::Color::Black;
 
+	return lines;
+}
+
+void Ramp::drawBody(sf::RenderWindow& window){
+	sf::VertexArray lines = getLines();
 	window.draw(lines);
+}
+
+void Ramp::drawBody(sf::RenderTexture& texture){
+	sf::VertexArray lines = getLines();
+	texture.draw(lines);
 }
 
 /** @return the position of the Top left corner of the V in the box2D world coordinates [m]*/

@@ -41,6 +41,8 @@ struct sTerrain{
 
 struct sSimulation{
 	double gravity;
+	bool use_delay;
+	bool gaussian_delay;
 	double robot_delay;
 	double robot_distance;
 	double robot_phase;
@@ -59,11 +61,12 @@ struct sController{
 	double time_before_pushing;
 	int max_robot_window;
 	double stability_condition;
+	float gain;
 };
 
 struct sRobot{
 	double body_length;
-	int fixed_speed;
+	bool dynamic_speed;
 	double speed;
 	double proportional_control;
 	double wheel_distance;

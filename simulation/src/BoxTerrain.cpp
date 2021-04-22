@@ -7,15 +7,13 @@
 
 #include "BoxTerrain.h"
 
-BoxTerrain::BoxTerrain(){};
-
-BoxTerrain::BoxTerrain(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
+BoxTerrain::BoxTerrain(b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
 	// TODO Auto-generated constructor stub
-	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
-	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
+	m_M_TO_PX = m_windowSize.x /  (1.2*m_width);
+	m_posY=m_windowSize.y/m_M_TO_PX - (m_windowSize.y/m_M_TO_PX-m_height)/2;
+	m_window_x = m_windowSize.x;
+	m_window_y = m_windowSize.y;
 
 }
 
@@ -23,14 +21,14 @@ BoxTerrain::~BoxTerrain() {
 	// TODO Auto-generated destructor stub
 }
 
-void BoxTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
-	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
-	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
-}
+// void BoxTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
+// 	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
+// 	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
+// 	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
+// 	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
+// 	m_window_x = window.getSize().x;
+// 	m_window_y = window.getSize().y;
+// }
 
 void BoxTerrain::createBody(b2World* world){
 
@@ -65,16 +63,15 @@ void BoxTerrain::createBody(b2World* world){
 
 }
 
-void BoxTerrain::drawBody(sf::RenderWindow& window){
-
-	float h = window.getSize().y - m_height*m_M_TO_PX;
-	float l = window.getSize().x - m_width*m_M_TO_PX;
+sf::VertexArray BoxTerrain::getLines() {
+	float h = m_windowSize.y - m_height*m_M_TO_PX;
+	float l = m_windowSize.x - m_width*m_M_TO_PX;
 
 	sf::VertexArray lines(sf::LinesStrip, 5);
 	lines[0].position = sf::Vector2f(l/2, h/2);
-	lines[1].position = sf::Vector2f(l/2, window.getSize().y-h/2);
-	lines[2].position = sf::Vector2f(window.getSize().x-l/2, window.getSize().y-h/2);
-	lines[3].position = sf::Vector2f(window.getSize().x-l/2, h/2);
+	lines[1].position = sf::Vector2f(l/2, m_windowSize.y-h/2);
+	lines[2].position = sf::Vector2f(m_windowSize.x-l/2, m_windowSize.y-h/2);
+	lines[3].position = sf::Vector2f(m_windowSize.x-l/2, h/2);
 	lines[4].position = sf::Vector2f(l/2, h/2);
 
 	lines[0].color = sf::Color::Black;
@@ -83,8 +80,17 @@ void BoxTerrain::drawBody(sf::RenderWindow& window){
 	lines[3].color = sf::Color::Black;
 	lines[4].color = sf::Color::Black;
 
-	window.draw(lines);
+	return lines;
+}
 
+void BoxTerrain::drawBody(sf::RenderWindow& window) {
+	sf::VertexArray lines = getLines();
+	window.draw(lines);
+}
+
+void BoxTerrain::drawBody(sf::RenderTexture& texture) {
+	sf::VertexArray lines = getLines();
+	texture.draw(lines);
 }
 
 e_terrain_type BoxTerrain::getType(){

@@ -9,26 +9,13 @@
 #include <iostream>
 #include "helpers.h"
 
-Vterrain::Vterrain(){
-}
-
-Vterrain::Vterrain(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
-	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway+m_width);
-
+Vterrain::Vterrain(b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
+	m_M_TO_PX = m_windowSize.x /  (2*m_runaway+m_width);
 }
 
 Vterrain::~Vterrain() {
 	// TODO Auto-generated destructor stub
-}
-
-void Vterrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
-	std::cout << "WINDOW_X_PX : " << WINDOW_X_PX << std::endl;
-	std::cout << "m_runaway : " << m_runaway << std::endl;
-	std::cout << "m_width : " << m_width << std::endl;
-	m_M_TO_PX = WINDOW_X_PX /  (2*m_runaway+m_width);
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
 }
 
 void Vterrain::createBody(b2World* world){
@@ -112,6 +99,31 @@ void Vterrain::drawBody(sf::RenderWindow& window){
 	lines[4].color = sf::Color::Black;
 
 	window.draw(lines);
+}
+
+void Vterrain::drawBody(sf::RenderTexture& texture){
+	sf::VertexArray lines(sf::LinesStrip, 5);
+	// m_M_TO_PX is 0 when I declare "Vterrain m_terrain" in Demo::Demo() in Demo.cpp
+	// it is non-zero otherwise
+	lines[0].position = sf::Vector2f(0, m_posY*m_M_TO_PX);
+	lines[1].position = sf::Vector2f(m_runaway*m_M_TO_PX, m_posY*m_M_TO_PX);
+	lines[2].position = sf::Vector2f((m_runaway+m_width/2)*m_M_TO_PX, (m_posY+m_height)*m_M_TO_PX);
+	lines[3].position = sf::Vector2f((m_runaway+m_width)*m_M_TO_PX, m_posY*m_M_TO_PX);
+	lines[4].position = sf::Vector2f((2*m_runaway+m_width)*m_M_TO_PX, m_posY*m_M_TO_PX);
+
+//	lines[0].position = sf::Vector2f(0, m_posY*m_M_TO_PX);
+//	lines[1].position = sf::Vector2f(m_runaway*m_M_TO_PX, m_posY*m_M_TO_PX);
+//	lines[2].position = sf::Vector2f((m_runaway+m_height*sin(m_angle))*m_M_TO_PX, (m_posY+m_height*cos(m_angle))*m_M_TO_PX);
+//	lines[3].position = sf::Vector2f((m_runaway+2*m_height*sin(m_angle))*m_M_TO_PX, m_posY*m_M_TO_PX);
+//	lines[4].position = sf::Vector2f((2*m_runaway+2*m_height*sin(m_angle))*m_M_TO_PX, m_posY*m_M_TO_PX);
+
+	lines[0].color = sf::Color::Black;
+	lines[1].color = sf::Color::Black;
+	lines[2].color = sf::Color::Black;
+	lines[3].color = sf::Color::Black;
+	lines[4].color = sf::Color::Black;
+
+	texture.draw(lines);
 }
 
 /** @return the position of the Top left corner of the V in the box2D world coordinates [m]*/

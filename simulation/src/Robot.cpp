@@ -230,6 +230,97 @@ void Robot::drawBody(sf::RenderWindow& window, double m_to_pix){
 //	window.draw(m_shapeRight);
 
 }
+void Robot::drawBody(sf::RenderTexture& texture, double m_to_pix){
+
+	/* Left wheel */
+	sf::CircleShape left_wheelShape(m_to_pix* m_robotParameters.wheel_radius);
+	if (m_state == BRIDGE){
+//	if (m_isGrabbed){
+//	if (m_moving){
+		if(m_movingSide == LEFT){
+			left_wheelShape.setFillColor(sf::Color(237,201,217));
+		}
+		else{
+			left_wheelShape.setFillColor(sf::Color(172,197,217));
+		}
+	}
+	else{
+		if(m_movingSide == LEFT){
+			left_wheelShape.setFillColor(sf::Color(246,125,150));
+		}
+		else{
+			left_wheelShape.setFillColor(sf::Color(58,105,186));
+		}
+	}
+	double bodyAngle = m_leftWheel->GetAngle();
+	double topLeftX = m_leftWheel->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_radius,-m_robotParameters.wheel_radius)).x;
+	double topLeftY = m_leftWheel->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_radius,-m_robotParameters.wheel_radius)).y;
+
+	left_wheelShape.setPosition(m_to_pix*topLeftX,m_to_pix*topLeftY); //body.getPosition
+	left_wheelShape.setRotation(bodyAngle*RAD_TO_DEG);
+
+	sf::Vertex angle_left[2];
+	b2Vec2 start = m_leftWheel->GetWorldCenter();
+	b2Vec2 end = m_leftWheel->GetWorldPoint(b2Vec2(0,m_robotParameters.wheel_radius));
+	angle_left[0]= sf::Vertex(sf::Vector2f(start.x*m_to_pix, start.y*m_to_pix), sf::Color::Black);
+	angle_left[1]=	sf::Vertex(sf::Vector2f(end.x*m_to_pix, end.y*m_to_pix), sf::Color::Black);
+
+	/* Right wheel */
+	sf::CircleShape right_wheelShape(m_to_pix* m_robotParameters.wheel_radius);
+//	if (m_isGrabbed){
+	if (m_state == BRIDGE){
+//	if (m_moving){
+		if(m_movingSide == RIGHT){
+			right_wheelShape.setFillColor(sf::Color(237,201,217));
+		}
+		else{
+			right_wheelShape.setFillColor(sf::Color(172,197,217));
+		}
+
+	}
+	else{
+		if(m_movingSide == RIGHT){
+			right_wheelShape.setFillColor(sf::Color(246,125,150));
+		}
+		else{
+			right_wheelShape.setFillColor(sf::Color(58,105,186));
+		}
+	}
+	bodyAngle = m_rightWheel->GetAngle();
+	topLeftX = m_rightWheel->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_radius,-m_robotParameters.wheel_radius)).x;
+	topLeftY = m_rightWheel->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_radius,-m_robotParameters.wheel_radius)).y;
+
+	right_wheelShape.setPosition(m_to_pix*topLeftX,m_to_pix*topLeftY); //body.getPosition
+	right_wheelShape.setRotation(bodyAngle*RAD_TO_DEG);
+
+	sf::Vertex angle_right[2];
+	start = m_rightWheel->GetWorldCenter();
+	end = m_rightWheel->GetWorldPoint(b2Vec2(0, m_robotParameters.wheel_radius));
+	angle_right[0] = sf::Vertex(sf::Vector2f(start.x*m_to_pix, start.y*m_to_pix), sf::Color::Black);
+	angle_right[1] = sf::Vertex(sf::Vector2f(end.x*m_to_pix, end.y*m_to_pix), sf::Color::Black);
+
+	/* wheel Attach */
+	sf::RectangleShape attachShape(sf::Vector2f(m_robotParameters.wheel_distance*m_to_pix, m_robotParameters.attach_height*m_to_pix));
+	attachShape.setFillColor(sf::Color::Black);
+	bodyAngle = m_robotBody->GetAngle();
+	topLeftX = m_robotBody->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_distance/2,-m_robotParameters.attach_height/2)).x;
+	topLeftY = m_robotBody->GetWorldPoint(b2Vec2(-m_robotParameters.wheel_distance/2,-m_robotParameters.attach_height/2)).y;
+
+	attachShape.setPosition(m_to_pix*topLeftX,m_to_pix*topLeftY);
+	attachShape.setRotation(bodyAngle*RAD_TO_DEG);
+
+	texture.draw(attachShape);
+
+	texture.draw(left_wheelShape);
+	texture.draw(right_wheelShape);
+
+//	window.draw(angle_right, 2, sf::Lines);
+//	window.draw(angle_left, 2, sf::Lines);
+
+//	window.draw(m_shapeLeft);
+//	window.draw(m_shapeRight);
+
+}
 void Robot::drawGripJoint(sf::RenderWindow& window, double m_to_px){
 
 
@@ -300,6 +391,77 @@ void Robot::drawGripJoint(sf::RenderWindow& window, double m_to_px){
 
 
 }
+void Robot::drawGripJoint(sf::RenderTexture& texture, double m_to_px){
+
+
+	if(m_previousGripJoint){
+
+		b2Vec2 pA = m_previousGripJoint->GetAnchorA();
+		float delta = 1/2;
+
+
+		sf::Vertex edge[2];
+		edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+
+		if((m_previousGripJoint->GetBodyA() == m_leftWheel) || (m_previousGripJoint->GetBodyB() == m_leftWheel)){
+			float xB = delta*m_leftWheel->GetLocalPoint(pA).x;
+			float yB = delta*m_leftWheel->GetLocalPoint(pA).y;
+			b2Vec2 pB = m_leftWheel->GetWorldPoint(b2Vec2(xB, yB));
+			edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		}
+
+		else if(m_previousGripJoint->GetBodyA() == m_rightWheel || (m_previousGripJoint->GetBodyB() == m_rightWheel)){
+			float xB = delta*m_rightWheel->GetLocalPoint(pA).x;
+			float yB = delta*m_rightWheel->GetLocalPoint(pA).y;
+			b2Vec2 pB = m_rightWheel->GetWorldPoint(b2Vec2(xB, yB));
+			edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		}
+
+		sf::CircleShape p1;
+		p1.setRadius(6);
+		p1.setFillColor(sf::Color::Black);
+		p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+
+		texture.draw(edge, 2, sf::Lines);
+		texture.draw(p1);
+	}
+
+
+	 /* Same with current joint -------------------*/
+
+	if(m_currentGripJoint){
+		b2Vec2 pA = m_currentGripJoint->GetAnchorA();
+		float delta = 1/2;
+
+		sf::Vertex edge[2];
+		edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+
+		if((m_currentGripJoint->GetBodyA() == m_leftWheel) || (m_currentGripJoint->GetBodyB() == m_leftWheel)){
+			float xB = delta*m_leftWheel->GetLocalPoint(pA).x;
+			float yB = delta*m_leftWheel->GetLocalPoint(pA).y;
+			b2Vec2 pB = m_leftWheel->GetWorldPoint(b2Vec2(xB, yB));
+			edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		}
+
+		else if(m_currentGripJoint->GetBodyA() == m_rightWheel || (m_currentGripJoint->GetBodyB() == m_rightWheel)){
+			float xB = delta*m_rightWheel->GetLocalPoint(pA).x;
+			float yB = delta*m_rightWheel->GetLocalPoint(pA).y;
+			b2Vec2 pB = m_rightWheel->GetWorldPoint(b2Vec2(xB, yB));
+			edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		}
+
+		sf::CircleShape p1;
+		p1.setRadius(6);
+		p1.setFillColor(sf::Color::Black);
+		p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+
+		texture.draw(edge, 2, sf::Lines);
+		texture.draw(p1);
+	}
+
+
+}
+
 void Robot::drawJoint(sf::RenderWindow& window, double m_to_px){
 	 b2JointEdge* jointEdge = m_leftWheel->GetJointList();
 
@@ -436,6 +598,144 @@ void Robot::drawJoint(sf::RenderWindow& window, double m_to_px){
 
 		 window.draw(p1);
 		 window.draw(p2);
+	 }
+}
+void Robot::drawJoint(sf::RenderTexture& texture, double m_to_px){
+	 b2JointEdge* jointEdge = m_leftWheel->GetJointList();
+
+	 if(jointEdge == nullptr){
+		 return;
+	 }
+
+	 b2Joint* joint = jointEdge->joint;
+	 b2Vec2 pA = joint->GetAnchorA();
+	 b2Vec2 pB = joint->GetAnchorB();
+
+	 sf::Vertex edge[2];
+	 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+	 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+
+	 sf::CircleShape p1;
+	 sf::CircleShape p2;
+	 p1.setRadius(6);
+	 p1.setFillColor(sf::Color::Black);
+	 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+	 p2.setRadius(6);
+	 p2.setFillColor(sf::Color::Black);
+	 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+	 texture.draw(edge, 2, sf::Lines);
+	 texture.draw(p1);
+	 texture.draw(p2);
+
+	 if(!(jointEdge->next == nullptr)){
+		 joint = jointEdge->next->joint;
+		 pA = joint->GetAnchorA();
+		 pB = joint->GetAnchorB();
+
+		 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+		 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+
+		 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+		 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+		 texture.draw(edge, 2, sf::Lines);
+		 texture.draw(p1);
+		 texture.draw(p2);
+
+		 if(!(jointEdge->next->next == nullptr)){
+			 joint = jointEdge->next->next->joint;
+			 pA = joint->GetAnchorA();
+			 pB = joint->GetAnchorB();
+
+			 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+			 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+			 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+			 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+			 texture.draw(edge, 2, sf::Lines);
+			 texture.draw(p1);
+			 texture.draw(p2);
+		 }
+	 }
+
+	 if(!(jointEdge->prev == nullptr)){
+		 joint = jointEdge->prev->joint;
+		 pA = joint->GetAnchorA();
+		 pB = joint->GetAnchorB();
+
+		 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+		 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		 texture.draw(edge, 2, sf::Lines);
+		 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+		 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+		 texture.draw(p1);
+		 texture.draw(p2);
+	 }
+
+	 /* Same with right side -------------------*/
+
+
+	 jointEdge = m_rightWheel->GetJointList();
+	 joint = jointEdge->joint;
+	 pA = joint->GetAnchorA();
+	 pB = joint->GetAnchorB();
+
+	 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+	 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+
+	 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+	 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+	 texture.draw(edge, 2, sf::Lines);
+	 texture.draw(p1);
+	 texture.draw(p2);
+
+	 if(!(jointEdge->next == nullptr)){
+	 		 joint = jointEdge->next->joint;
+	 		 pA = joint->GetAnchorA();
+	 		 pB = joint->GetAnchorB();
+
+	 		 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+	 		 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+
+	 		 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+	 		 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+	 		 texture.draw(edge, 2, sf::Lines);
+	 		 texture.draw(p1);
+	 		 texture.draw(p2);
+
+	 		 if(!(jointEdge->next->next == nullptr)){
+	 			 joint = jointEdge->next->next->joint;
+	 			 pA = joint->GetAnchorA();
+	 			 pB = joint->GetAnchorB();
+
+	 			 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+	 			 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+	 			 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+	 			 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+	 			 texture.draw(edge, 2, sf::Lines);
+	 			 texture.draw(p1);
+	 			 texture.draw(p2);
+	 		 }
+	 	 }
+
+	 if(!(jointEdge->prev == nullptr)){
+		 joint = jointEdge->prev->joint;
+		 pA = joint->GetAnchorA();
+		 pB = joint->GetAnchorB();
+
+		 edge[0] = sf::Vertex(sf::Vector2f(pA.x*m_to_px, m_to_px*pA.y), sf::Color::Black);
+		 edge[1] = sf::Vertex(sf::Vector2f(m_to_px*pB.x, m_to_px*pB.y), sf::Color::Black);
+		 texture.draw(edge, 2, sf::Lines);
+		 p1.setPosition(m_to_px*pA.x-3,pA.y*m_to_px-3);
+		 p2.setPosition(m_to_px*pB.x-3,pB.y*m_to_px-3);
+
+		 texture.draw(p1);
+		 texture.draw(p2);
 	 }
 }
 

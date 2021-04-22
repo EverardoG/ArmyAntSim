@@ -24,11 +24,8 @@ using AllPolygons = std::vector<Polygon>;
 
 class CliffTerrain: public Terrain {
 public:
-	CliffTerrain();
-	CliffTerrain(	b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
+	CliffTerrain(	b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength);
 	virtual ~CliffTerrain();
-
-	void create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
 
 	/// Create the Box2D body for the static object of the scene.
 	/// @param m_to_pix, window_x_px, window_y_px: configuration of the window, they are usually defined in the config file.
@@ -40,10 +37,10 @@ public:
 	/// @param wall_w_m, wall_h_m: configuration of the walls, they are usually defined in the config file.
 	void drawBody(	sf::RenderWindow& window);
 
+	void drawBody( sf::RenderTexture& texture);
+
 	e_terrain_type getType();
 private:
-	int m_window_x=0;
-	int m_window_y=0;
 	AllPolygons allPolygons;
 };
 

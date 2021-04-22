@@ -19,17 +19,20 @@
 #include <iostream>
 #include "Robot.h"
 #include "RobotController.h"
-#include "Vterrain.h"
-#include "V2BLTerrain.h"
-#include "Ramp.h"
-#include "VStepper.h"
 #include "CliffTerrain.h"
+#include "BoxTerrain.h"
+#include "Ramp.h"
+#include "V2BLTerrain.h"
+#include "VStepper.h"
+#include "Vterrain.h"
+#include "DefaultTerrain.h"
 #include <iostream>
 #include <fstream>
 #include "Config.h"
 
 #include <random>
-#include "BoxTerrain.h"
+
+enum SimulationState { Formation, Dissolution, End };
 
 /** @class MyContactListener_v2
  * This class is a listener on the box2D body contacts. In case of contact it calls the RobotController::findContactRobots(contact) method
@@ -62,6 +65,8 @@ class Demo {
 public:
 	Demo(b2World* m_world, config::sConfig cfg);
 	virtual ~Demo();
+
+	bool addRobot();
 
 	/**
 	 * Create a new robot after a given delay defined by m_config.simulation.robot_delay (which has been obtained as an argument of the Demo object creation)
@@ -131,7 +136,7 @@ public:
 	 * @param draw should be true if the window has to be drawn beforehand. It is the case when the visualization is deactivated
 	 * @param step is the simulation step: it is either 1 if the simulation is in the bridge formation step or 2 if the simulation is in the bridge dissolution one.
 	 */
-	void takeScreenshot(bool draw, int step);
+	void takeScreenshot(bool draw);
 
 	/**
 	 * Write the file containing the summary of the simulation results
@@ -151,7 +156,7 @@ private:
 //	b2Vec2 m_gravity = b2Vec2(0.f, 0.f);
 	RobotController m_robotController; //Robot controller containing the vector of the robots
 	double m_to_px; //Scale to do the conversion from real dimensions (m) to simulated ones (pixels). Usually obtained from the terrain
-	Terrain* m_terrain = new Terrain;
+	Terrain* m_terrain;
 	MyContactListener_v2* myContactListener; //Contact listener
 	double m_it = 0; //Iteration counter used to create the robots with a given delay between them
 	int m_nbRobots = 0; //Number of robots created
@@ -189,7 +194,8 @@ private:
 	//	std::default_random_engine gen;
 	std::normal_distribution<double> m_gauss_delay;
 
-	std::string m_simulation_state = "Formation"; // Current state of the simulation (bridge formation vs bridge dissolution)
+	// Set the initial state of the simulation
+	SimulationState state = SimulationState::Formation;
 
 protected:
 	b2World* m_world = nullptr; // pointer on the Box2D world
