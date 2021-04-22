@@ -7,15 +7,13 @@
 
 #include "BoxTerrain.h"
 
-BoxTerrain::BoxTerrain(){};
-
-BoxTerrain::BoxTerrain(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
+BoxTerrain::BoxTerrain(b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
 	// TODO Auto-generated constructor stub
-	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
-	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
+	m_M_TO_PX = m_windowSize.x /  (1.2*m_width);
+	m_posY=m_windowSize.y/m_M_TO_PX - (m_windowSize.y/m_M_TO_PX-m_height)/2;
+	m_window_x = m_windowSize.x;
+	m_window_y = m_windowSize.y;
 
 }
 
@@ -23,14 +21,14 @@ BoxTerrain::~BoxTerrain() {
 	// TODO Auto-generated destructor stub
 }
 
-void BoxTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
-	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
-	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
-	m_window_x = window.getSize().x;
-	m_window_y = window.getSize().y;
-}
+// void BoxTerrain::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
+// 	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
+// 	m_M_TO_PX = WINDOW_X_PX /  (1.2*m_width);
+// 	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
+// 	m_posY=window.getSize().y/m_M_TO_PX - (window.getSize().y/m_M_TO_PX-m_height)/2;
+// 	m_window_x = window.getSize().x;
+// 	m_window_y = window.getSize().y;
+// }
 
 void BoxTerrain::createBody(b2World* world){
 

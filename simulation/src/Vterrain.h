@@ -16,8 +16,7 @@
 
 class Vterrain: public Terrain {
 public:
-	Vterrain();
-	Vterrain(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1); // If want to define the dimension relatively to the body length
+	Vterrain(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength); // If want to define the dimension relatively to the body length
 	virtual ~Vterrain();
 
 	/*Default terrain is linear ground of width 2*m_runaway located at m_posY from the top of the window*/
@@ -28,7 +27,7 @@ public:
 	 * @param terrainParam are the terrain parameters (cf Config.h)
 	 * @param WINDOW_X_PX is the x-size of the window. it is used to calculate the scale to convert from meters to pixels
 	 * @param bodylength is the size of a robot. it is used to convert the dimension from body length to m */
-	void create(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
+	// void create(b2World* world, sf::RenderWindow& window,  config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength=1);
 	/**
 	 * Create the Box2D static body of the terrain
 	 * @param world is a pointer on the Box2D world
@@ -40,6 +39,8 @@ public:
 	 * @param window is the SFML window where the terrain will be drawn
 	 */
 	void drawBody(sf::RenderWindow& window);
+
+	void drawBody(sf::RenderTexture& texture);
 
 	/** return the terrain type, from this class it returns V_TERRAIN */
 	e_terrain_type getType();

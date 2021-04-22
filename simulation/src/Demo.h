@@ -20,6 +20,12 @@
 #include "Robot.h"
 #include "RobotController.h"
 #include "CliffTerrain.h"
+#include "BoxTerrain.h"
+#include "Ramp.h"
+#include "V2BLTerrain.h"
+#include "VStepper.h"
+#include "Vterrain.h"
+#include "DefaultTerrain.h"
 #include <iostream>
 #include <fstream>
 #include "Config.h"

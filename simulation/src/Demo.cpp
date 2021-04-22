@@ -56,25 +56,32 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 
 	std::cout << "Terrain type: " << m_config.terrain.type << std::endl;
 
-	// TODO: This is where terrain type will be set
-	// if (m_config.terrain.type == "v_terrain") {
-	// 	m_terrain = new Vterrain;
-	// }
-	// else if (m_config.terrain.type == "v2bl_terrain") {
-	// 	m_terrain = new V2BLTerrain;
-	// }
-	// else if (m_config.terrain.type == "ramp") {
-	// 	m_terrain = new Ramp;
-	// }
-	// else if (m_config.terrain.type == "box") {
-	// 	m_terrain = new BoxTerrain;
-	// }
-	// else if (m_config.terrain.type == "v_stepper") {
-	// 	m_terrain = new VStepper;
-	// }
-	// else
-	if (m_config.terrain.type == "cliff") {
+	// TODO: Add some sort of check that the user entered a valid terrain
+
+	if (m_config.terrain.type == "v_terrain") {
+		m_terrain = new Vterrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "v2bl_terrain") {
+		m_terrain = new V2BLTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "ramp") {
+		m_terrain = new Ramp(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "box") {
+	 	m_terrain = new BoxTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "v_stepper") {
+		m_terrain = new VStepper(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "cliff") {
 		m_terrain = new CliffTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else if (m_config.terrain.type == "default") {
+		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
+	else {
+		std::cout << "No terrain specified or invalid terrain specified. Using default terrain." << std::endl;
+		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
 
 	// std::cout << "m_config.window.WINDOW_X_PX: " << m_config.window.WINDOW_X_PX << std::endl;

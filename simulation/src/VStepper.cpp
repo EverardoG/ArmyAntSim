@@ -7,27 +7,14 @@
 
 #include "VStepper.h"
 
-VStepper::VStepper() {
-	// TODO Auto-generated constructor stub
-
-}
-
-VStepper::VStepper(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength)
-: Terrain(world, window, terrainParam, WINDOW_X_PX, bodyLength){
-	m_M_TO_PX = WINDOW_X_PX /  (4*m_runaway);
-	m_posY=10;
-
+VStepper::VStepper(b2World* world, config::sWindow windowParam, config::sTerrain terrainParam, double bodyLength)
+: Terrain(world, windowParam, terrainParam, bodyLength){
+	m_M_TO_PX = m_windowSize.x /  (3*m_runaway);
+	m_posY=7;
 }
 
 VStepper::~VStepper() {
 	// TODO Auto-generated destructor stub
-}
-
-void VStepper::create(b2World* world, sf::RenderWindow& window, config::sTerrain terrainParam, int WINDOW_X_PX, double bodyLength){
-	Terrain::create(world, window, terrainParam, WINDOW_X_PX, bodyLength);
-	m_M_TO_PX = WINDOW_X_PX /  (3*m_runaway);
-	printf("m_M_TO_PX: %f, \n", m_M_TO_PX);
-	m_posY=7;
 }
 
 void VStepper::createBody(b2World* world){
@@ -96,6 +83,29 @@ void VStepper::drawBody(sf::RenderWindow& window){
 	lines[7].color = sf::Color::Black;
 
 	window.draw(lines);
+}
+
+void VStepper::drawBody(sf::RenderTexture& texture){
+	sf::VertexArray lines(sf::LinesStrip, 8);
+	lines[0].position = sf::Vector2f(0, (m_posY)*m_M_TO_PX);
+	lines[1].position = sf::Vector2f(m_runaway*m_M_TO_PX, (m_posY)*m_M_TO_PX);
+	lines[2].position = sf::Vector2f((m_runaway-m_height/abs(tan(m_angle)))*m_M_TO_PX, (m_posY-m_height)*m_M_TO_PX);
+	lines[3].position = sf::Vector2f((m_runaway-m_height/abs(tan(m_angle)))*m_M_TO_PX, (m_posY-1.2*m_height)*m_M_TO_PX);
+	lines[4].position = sf::Vector2f((1.5*m_runaway+m_height/abs(tan(0.7*m_angle)))*m_M_TO_PX, (m_posY-1.2*m_height)*m_M_TO_PX);
+	lines[5].position = sf::Vector2f((1.5*m_runaway+m_height/abs(tan(0.7*m_angle)))*m_M_TO_PX, (m_posY-m_height)*m_M_TO_PX);
+	lines[6].position = sf::Vector2f((1.5*m_runaway)*m_M_TO_PX, (m_posY)*m_M_TO_PX);
+	lines[7].position = sf::Vector2f((3*m_runaway)*m_M_TO_PX, (m_posY)*m_M_TO_PX);
+
+	lines[0].color = sf::Color::Black;
+	lines[1].color = sf::Color::Black;
+	lines[2].color = sf::Color::Black;
+	lines[3].color = sf::Color::Black;
+	lines[4].color = sf::Color::Black;
+	lines[5].color = sf::Color::Black;
+	lines[6].color = sf::Color::Black;
+	lines[7].color = sf::Color::Black;
+
+	texture.draw(lines);
 }
 
 e_terrain_type VStepper::getType(){
