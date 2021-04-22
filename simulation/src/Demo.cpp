@@ -109,7 +109,7 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	m_config.robot.wheel_radius = (m_config.robot.body_length - 0.02)/4;
 	m_config.simulation.robot_initial_posY = m_terrain->getTopLeftCorner().y - m_config.robot.wheel_radius - m_config.simulation.robot_initial_posY * m_config.robot.body_length;
 
-	m_robotController.create(m_config.controller, m_config.robot, m_terrain->getBody());
+	m_robotController.create(m_config.controller, m_config.robot, m_terrain->getBody(), m_terrain->getPosGoal());
 	m_robotController.setScale(m_to_px);
 	myContactListener = new MyContactListener_v2(m_robotController);
 
@@ -215,13 +215,15 @@ void Demo::demoLoop(){
 				m_currentIt ++;
 				break;
 		}
+		// Testing things
+		// std::cout << m_robotController.getNbRobotsReachedGoal() << std::endl;
+
 		// Update the simulation state
-		if ( m_elapsedTime < m_config.simulation.bridge_duration ) {
-			state = SimulationState::Formation;
-		}
-		else if ( m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration ) {
-			// Get the number of robots in the final bridge if the simulation just switched
-			if (state == SimulationState::Formation) {
+
+		// Based on robots reaching the goal
+		if ( m_config.simulation.smart_dissolution ) {
+			// Switch the state to Dissolution if enough robots have reached the goal
+			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
 				// Get the number of robots in the final bridge
 				m_nbRobotsInBridgeState = m_robotController.getNbRobots(BRIDGE);
 				m_nbRobotsInBridge = m_nbRobotsInBridgeState + m_robotController.getNbRobotsBlocked();
@@ -233,12 +235,42 @@ void Demo::demoLoop(){
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
+				state = SimulationState::Dissolution;
+				std::cout << "Switching to dissolution state." << std::endl;
 			}
-			state = SimulationState::Dissolution;
+			// End the simulation if all robots have despawned after dissolving their bridge
+			else if ( state == SimulationState::Dissolution && m_robotController.getNbActiveRobots() == 0 ) {
+				state = SimulationState::End;
+			}
 		}
+
+		// Based on timing
 		else {
-			state = SimulationState::End;
+			if ( m_elapsedTime < m_config.simulation.bridge_duration ) {
+				state = SimulationState::Formation;
+			}
+			else if ( m_elapsedTime < m_config.simulation.dissolution_duration + m_config.simulation.bridge_duration ) {
+				// Get the number of robots in the final bridge if the simulation just switched
+				if (state == SimulationState::Formation) {
+					// Get the number of robots in the final bridge
+					m_nbRobotsInBridgeState = m_robotController.getNbRobots(BRIDGE);
+					m_nbRobotsInBridge = m_nbRobotsInBridgeState + m_robotController.getNbRobotsBlocked();
+					m_elapsedTimeBridge = m_elapsedTime;
+					m_length = getNewPathLength();
+					m_height = getBridgeHeight();
+
+					// Set robots to use fixed speeds if they were previously using dynamic speeds
+					if (m_config.robot.dynamic_speed) {
+						m_robotController.SetGlobalSpeed(m_config.robot.speed);
+					}
+				}
+				state = SimulationState::Dissolution;
+			}
+			else {
+				state = SimulationState::End;
+			}
 		}
+
 
 		// If the visualization is active, then take in keyboard inputs and act on them
 		if ( m_config.simulation.visualization ) {
@@ -290,7 +322,7 @@ bool Demo::addRobot() {
 
 bool Demo::addRobotWithDelay(){
 
-	if(m_nbRobots < m_config.simulation.nb_robots){
+	if(m_config.controller.infinite_robots || m_nbRobots < m_config.simulation.nb_robots){
 		int final_it = int(60 * m_config.simulation.robot_delay) ; // at 60 fps
 		if(m_it > final_it){
 			if(m_nbRobots && m_robotController.robotStacking(m_robotController.getRobotWithId(m_nbRobots), m_config.simulation.robot_initial_posX)){
@@ -336,7 +368,7 @@ bool Demo::addRobotWithDistance(){
 		m_nbRobots++;
 		return true;
 	}
-	else if(m_nbRobots < m_config.simulation.nb_robots){
+	else if(m_config.controller.infinite_robots || m_nbRobots < m_config.simulation.nb_robots){
 
 		float distance = m_robotController.getRobotWithId(m_nbRobots)->getBody()->GetPosition().x;
 		distance -= m_config.simulation.robot_initial_posX*m_config.robot.body_length;
@@ -676,6 +708,9 @@ void Demo::takeScreenshot(bool draw){
 	if ( state == SimulationState::Formation ) { filename = filename + "_formation_"; }
 	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution_"; }
 	filename = filename + std::to_string(m_currentIt) + ".jpg";
+
+	// Create the target directory if none exists
+	fs::create_directories(m_config.logfile_path);
 
 	// Save the image
 	image.saveToFile(filename);

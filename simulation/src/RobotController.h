@@ -12,11 +12,12 @@
 #define ROBOTCONTROLLER_H_
 
 #include "Robot.h"
+#include <unordered_map>
 
 class RobotController {
 public:
 	RobotController();
-	RobotController(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, double m_to_px = 0);
+	RobotController(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, b2Vec2 posGoal, double m_to_px = 0);
 	virtual ~RobotController();
 
 	/**
@@ -34,7 +35,7 @@ public:
 	 */
 	bool checkGrabbed(Robot& robot);
 
-	void create(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, double m_to_px = 0);
+	void create(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, b2Vec2 posGoal, double m_to_px = 0);
 
 	/**
 	 * Takes the robot as parameter and create a new grip in the box2D world if the robot.isContact() is true
@@ -251,6 +252,7 @@ public:
 	 */
 	bool m_bridgeEntry = false;
 
+	int getNbRobotsReachedGoal();
 
 private:
 
@@ -273,11 +275,13 @@ private:
 	double m_angle_min= PI/8;
 
 	b2Body* m_terrainBody=nullptr; //Pointer on the terrain Box2D body
+	b2Vec2 m_posGoal; // Position of the goal set in the terrain
 
 	config::sController m_controllerParam; //Structure containing the controller parameters. The structure is defined in the Config.h file
 	config::sRobot m_robotParam; //Structure containing the robot parameters. The structure is defined in the Config.h file
 
 	int m_M_TO_PX; //Copy of the scale to do the conversion from real dimensions (m) to simulated ones (pixels)
+	std::unordered_map<int, bool> m_robots_reached_goal; // ids of all the robots that have passed the goal (if one was set)
 };
 
 #endif /* ROBOTCONTROLLER_H_ */
