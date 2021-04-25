@@ -1,6 +1,5 @@
 from numpy import linspace, pi
 from os import system
-# from datetime import datetime
 import argparse
 
 # Parse the commandline for an optional top directory to store results of these tests in
@@ -43,15 +42,12 @@ for gain in gain_vector:
             command += " --smart_dissolution 1"
             command += " --robot_distance 2"
             command += " --infinite_robots 1"
-            command += " --enable_visualization 1"
+            command += " --enable_visualization 0"
             command += " --robot_speed " + str(offset)
             command += " --kp " + str(gain)
             command += " --file_path " + root_directory + "kp_" + str(gain)[:4] + "_robot_speed_" + str(offset)[:4] + "/" + str(i) + "/"
             command_list.append(command)
-            print(command)
-
-# print(command_list)
 
 # Execute the commands to run the sweep
-# for command in command_list:
-#     system(command)
+for command in command_list:
+    system(command)
