@@ -78,7 +78,7 @@ void RobotController::setScale(double m_to_px){
 bool RobotController::createRobot(b2World* world, int delay, double posX, double posY, double angle){
 
 	if (!m_controllerParam.infinite_robots && m_robotVector.size() >= m_controllerParam.max_robot_window){
-//		printf("the max number of robot in the screen has already been reached");
+		printf("the max number of robot in the screen has already been reached");
 		return false;
 	}
 	else{
@@ -167,7 +167,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 	}
 
 	if (robotA && robotB && (rA==rB)){
-		printf("contact within robot\n");
+		// printf("contact within robot\n");
 		return;
 	}
 

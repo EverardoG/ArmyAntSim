@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	ValueArg<float>       angle_arg("", "v_half_angle", "Half angle of the v shape in v_terrain in robot body lengths. When angle > 0, width is not taken into account", false, 50/RAD_TO_DEG, "DEG float 50/RAD_TO_DEG");
 
 	// Create Simulation Parameters
-	ValueArg<float>       robot_distance_arg("", "robot_distance", "Distance between the creation of two successive robots in s", false, 3.5, "BL float 3.5");
+	ValueArg<float>       robot_distance_arg("", "robot_distance", "Distance between the creation of two successive robots in body lengths", false, 3.5, "BL float 3.5");
 	ValueArg<float>       robot_phase_arg("","robot_phase", "Phase shift between two successive robots in rad", false, 0.0, "RAD float 0.0");
 	ValueArg<float>       robot_delay_arg("","robot_delay", "Delay between the creation of two successive robots in s",false,3.25,"SEC float 3.25");
 	ValueArg<float>       robot_init_x_arg("", "robot_init_x", "Initial x distance of the robot from the V start",false,5.2,"BL float 5.2");
@@ -93,8 +93,8 @@ int main(int argc, char* argv[])
 	ValueArg<int> window_y_arg("", "window_y", "Height of the window in pixels", false, 1080, "PIX int 1080");
 
 	// Create File Parameters
-	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "experiments/log/", "PATH string \"experiments/log/\"");
-	ValueArg<std::string> logfile_name_arg("", "file_name", "Prefix for the names of the result files", false, "exp_", "NAME string \"exp_\"");
+	ValueArg<std::string> logfile_path_arg("", "file_path", "Path to write the result files", false, "results/", "PATH string \"results/\"");
+	ValueArg<std::string> logfile_name_arg("", "file_name", "Prefix for the names of the result files", false, "", "NAME string \"\"");
 
 	// Add Terrain parameters
 	cmd.add(terrain_type_arg);

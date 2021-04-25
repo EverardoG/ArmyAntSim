@@ -27,30 +27,31 @@ offset_vector = linspace(offset_start, offset_end, num_offsets)
 root_directory = ""
 if args.directory:
     root_directory += args.directory
+else:
+    root_directory = "results/"
+root_directory += "sweep_kp_" + str(gain_start)[:4] + "_to_" + str(gain_end)[:4] + "_robot_speed_" + str(offset_start)[:4] + "_to_" + str(offset_end)[:4] + "/"
 
-# Sweep the variables. 3 experiments per each combination.
+# Create a list of commands to sweep the variables. 3 experiments per each combination.
+command_list = []
 for gain in gain_vector:
     for offset in offset_vector:
         for i in range(3):
-            command = "./build/ArmyAntSim -y cliff --dynamic_speed 1"
-            command += " --robot_speed " + str(offset)[:3]
-            command += " --kp " + str(gain)[:3]
-            command += " --folder_path " + root_directory + "sweep_kp_" + str(gain_start)[:3] + "_to_" + str(gain_end)[:3] + "_robot_speed_" + str(offset_start)[:3] + "_to_" + str(offset_end)[:3]
-            command += " --file_path kp_" + str(gain)[:3] + "_robot_speed_" + str(offset)[:3]
+            command = "./build/ArmyAntSim"
+            command += " -y cliff"
+            command += " --dynamic_speed 1"
+            command += " --use_delay 0"
+            command += " --smart_dissolution 1"
+            command += " --robot_distance 2"
+            command += " --infinite_robots 1"
+            command += " --enable_visualization 1"
+            command += " --robot_speed " + str(offset)
+            command += " --kp " + str(gain)
+            command += " --file_path " + root_directory + "kp_" + str(gain)[:4] + "_robot_speed_" + str(offset)[:4] + "/" + str(i) + "/"
+            command_list.append(command)
             print(command)
-            # system(command)
 
+# print(command_list)
 
-
-# # Set up the result folder
-# now = str(datetime.now())
-# now = now.replace("-", "_")
-# now = now.replace(" ","_")
-# experiment_name = "push_sweep"
-# result_path = "./experiments/" + now  + "_" + experiment_name + "/"
-# print(result_path)
-
-# # Run the simulation for different values of push_delays
-# push_delays = linspace(0,4,5)
-# for push_delay in push_delays:
-#     system("./build/ArmyAntSim -y cliff" + " --push_delay " + str(push_delay) + " --file_path " + result_path + " --fixed_speed 0")
+# Execute the commands to run the sweep
+# for command in command_list:
+#     system(command)

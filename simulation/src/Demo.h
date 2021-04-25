@@ -133,10 +133,8 @@ public:
 	/**
 	 * Take a screenshot of the simulation at a given time step.
 	 * The image is saved under  m_config.logfile_path + m_config.logfile_name + "_dissolution_" + std::to_string(m_currentIt) + ".jpg"
-	 * @param draw should be true if the window has to be drawn beforehand. It is the case when the visualization is deactivated
-	 * @param step is the simulation step: it is either 1 if the simulation is in the bridge formation step or 2 if the simulation is in the bridge dissolution one.
-	 */
-	void takeScreenshot(bool draw);
+	  */
+	void takeScreenshot();
 
 	/**
 	 * Write the file containing the summary of the simulation results
@@ -173,6 +171,7 @@ private:
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached
 	float m_avg_x_pos = 0;
+	bool m_simulationStuck = false;
 
 	b2Vec2 m_startP; //Start point of the bridge (on the left side of the obstacle
 	b2Vec2 m_endP; //End point of the bridge (on the left side of the obstacle
