@@ -133,10 +133,8 @@ public:
 	/**
 	 * Take a screenshot of the simulation at a given time step.
 	 * The image is saved under  m_config.logfile_path + m_config.logfile_name + "_dissolution_" + std::to_string(m_currentIt) + ".jpg"
-	 * @param draw should be true if the window has to be drawn beforehand. It is the case when the visualization is deactivated
-	 * @param step is the simulation step: it is either 1 if the simulation is in the bridge formation step or 2 if the simulation is in the bridge dissolution one.
-	 */
-	void takeScreenshot(bool draw);
+	  */
+	void takeScreenshot();
 
 	/**
 	 * Write the file containing the summary of the simulation results
@@ -163,6 +161,7 @@ private:
 	double m_elapsedTime = 0; // in seconds (real-time =/= from simulation time)
 	double m_elapsedTimeDissolution = 0; //Duration of the dissolution phase (s)
 	double m_elapsedTimeBridge = 0; //Duration of the bridge formation phase (s)
+	double m_timexPosCheck = 0;
 	double m_length = 0; // Bridge length (Body length)
 	double m_height = 0; // Bridge height (Body length)
 	int m_currentIt = 0; // Current iteration
@@ -171,6 +170,9 @@ private:
 
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached
+	bool m_tooLongDissolution = false; //Flag to indicate the dissolution step is taking unreasonably long
+	float m_avg_x_pos = 0; // average x position of all active robots
+	bool m_simulationStuck = false; // Flag to indicate robots have not moved significantly in a long time
 
 	b2Vec2 m_startP; //Start point of the bridge (on the left side of the obstacle
 	b2Vec2 m_endP; //End point of the bridge (on the left side of the obstacle

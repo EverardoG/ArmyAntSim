@@ -156,8 +156,7 @@ void Demo::demoLoop(){
 
 				if(!addRobot()){
 					m_stacking = true;
-					printf("robot stacking \n");
-					break;
+					printf("Robot stacking.\n");
 				}
 
 				m_robotController.step(m_config.window.WINDOW_X_PX);
@@ -177,7 +176,7 @@ void Demo::demoLoop(){
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
-					takeScreenshot(true);
+					takeScreenshot();
 				}
 
 				m_elapsedTime += 1.f/FPS;
@@ -191,6 +190,7 @@ void Demo::demoLoop(){
 				break;
 
 			case SimulationState::Dissolution:
+				// std::cout << "Dissolution State" << std::endl;
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
@@ -208,26 +208,46 @@ void Demo::demoLoop(){
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
-					takeScreenshot(true);
+					takeScreenshot();
+				}
+
+				// End the simulation if the average x position has not moved to the right in 10 seconds
+				if (m_elapsedTime >= m_timexPosCheck + 60.0){
+					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
+						std::cout << "Simulation is stuck" << std::endl;
+						m_simulationStuck = true;
+					}
+					m_timexPosCheck = m_elapsedTime;
+					m_avg_x_pos = m_robotController.getAvgPos().x;
 				}
 
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
+
+				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
+				if (m_elapsedTime - m_elapsedTimeBridge > 10800) {
+					m_tooLongDissolution;
+				}
+
 				break;
 		}
 		// Testing things
 		// std::cout << m_robotController.getNbRobotsReachedGoal() << std::endl;
-
+		// std::cout << "Elapsed Time: " << m_elapsedTime << std::endl;
 		// Update the simulation state
 
 		// Based on robots reaching the goal
 		if ( m_config.simulation.smart_dissolution ) {
+			// std::cout << "Smart dissolution is on" << std::endl;
 			// Switch the state to Dissolution if enough robots have reached the goal
 			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
 				// Get the number of robots in the final bridge
 				m_nbRobotsInBridgeState = m_robotController.getNbRobots(BRIDGE);
 				m_nbRobotsInBridge = m_nbRobotsInBridgeState + m_robotController.getNbRobotsBlocked();
 				m_elapsedTimeBridge = m_elapsedTime;
+				std::cout << "---------------------------------------" << std::endl;
+				std::cout << "Bridge Time: " << m_elapsedTimeBridge << std::endl;
+				std::cout << "---------------------------------------" << std::endl;
 				m_length = getNewPathLength();
 				m_height = getBridgeHeight();
 
@@ -236,10 +256,15 @@ void Demo::demoLoop(){
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
 				state = SimulationState::Dissolution;
-				std::cout << "Switching to dissolution state." << std::endl;
+				std::cout << "Switched to dissolution state." << std::endl;
 			}
 			// End the simulation if all robots have despawned after dissolving their bridge
 			else if ( state == SimulationState::Dissolution && m_robotController.getNbActiveRobots() == 0 ) {
+				m_elapsedTimeDissolution = m_elapsedTime - m_elapsedTimeBridge;
+				state = SimulationState::End;
+			}
+			// End the simulation early if robots are stacking or robots are stuck
+			if (m_stacking || m_simulationStuck || m_tooLongDissolution){
 				state = SimulationState::End;
 			}
 		}
@@ -283,7 +308,7 @@ void Demo::demoLoop(){
 				// "s" event: take a screenshot
 				// change this to use takeScreenshot
 				if (event.key.code == sf::Keyboard::S) {
-					takeScreenshot(true);
+					takeScreenshot();
 				}
 			}
 
@@ -348,7 +373,7 @@ bool Demo::addRobotWithDelay(){
 				else{
 					m_config.simulation.robot_phase = moduloAngle(m_robotController.getRobot(0)->getAngle(), PI);
 				}
-				takeScreenshot(true);
+				takeScreenshot();
 			}
 		}
 		else{
@@ -373,8 +398,10 @@ bool Demo::addRobotWithDistance(){
 		float distance = m_robotController.getRobotWithId(m_nbRobots)->getBody()->GetPosition().x;
 		distance -= m_config.simulation.robot_initial_posX*m_config.robot.body_length;
 		float target = m_config.simulation.robot_distance*m_config.robot.body_length;
+		// std::cout << "distance: " << distance << " | " << "target: " << target << std::endl;
 
 		if(m_config.simulation.robot_phase > PI){
+			// std::cout << "m_config.simulation.robot_phase > PI" << std::endl;
 			int delay = round(int(m_config.controller.walk_delay*FPS)*(2*PI-m_config.simulation.robot_phase)/PI); // what is the better option: int or round ?
 			if(distance >= target && m_robotController.getRobotWithId(m_nbRobots)->getDelay()==delay){
 				float x = m_robotController.getRobotWithId(m_nbRobots)->getBody()->GetPosition().x - target;
@@ -386,6 +413,7 @@ bool Demo::addRobotWithDistance(){
 
 		}
 		else{
+			// std::cout << "m_config.simulation.robot_phase < PI" << std::endl;
 			float angle = m_robotController.getRobotWithId(m_nbRobots)->getBody()->GetAngle();
 			float flipping_distance = m_config.robot.body_length-2*m_config.robot.wheel_radius;
 			distance = distance - flipping_distance*sin(angle)/2;
@@ -399,7 +427,13 @@ bool Demo::addRobotWithDistance(){
 			}
 		}
 	}
-	return false;
+
+	if(m_nbRobots && m_robotController.robotStacking(m_robotController.getRobotWithId(m_nbRobots), m_config.simulation.robot_initial_posX)){
+		m_robotController.setBridgeStability(false);
+		return false;
+	}
+
+	return true;
 }
 
 RobotController Demo::getController(){
@@ -544,6 +578,10 @@ void Demo::writeResultFile(){
 	m_logFile << "	Bridge formation step duration: "<< std::to_string(m_elapsedTimeBridge) << " s\n\n";
 	m_logFile << "	Bridge dissolution step duration: "<< std::to_string(m_elapsedTimeDissolution) << " s\n\n";
 	m_logFile << "	Simulation duration: "<< std::to_string(m_elapsedTime) << " s\n\n";
+	m_logFile << "  Early termination flags:\n";
+	m_logFile << "    m_stacking: " << std::to_string(m_stacking) << "\n";
+	m_logFile << "    m_simulationStuck: " << std::to_string(m_simulationStuck) << "\n";
+	m_logFile << "    m_tooLongDissolution: " << std::to_string(m_tooLongDissolution) << "\n\n";
 
 	/** Controller parameters */
 	m_logFile << "Controller parameters: \n";
@@ -610,7 +648,7 @@ void Demo::writeResultFile(){
 }
 
 void Demo::createBridgeFile(){
-	std::string filename = m_config.logfile_path + m_config.logfile_name + "_bridge.txt";
+	std::string filename = m_config.logfile_path + m_config.logfile_name + "bridge.txt";
 	m_bridgeFile.open(filename);
 	m_bridgeFile << "Timestamp; robot ID; x coordinate; y coordinate; angle; current joint x; current joint y; previous joint x; previous joint y; it entry; age \n\n";
 }
@@ -657,7 +695,7 @@ void Demo::writeBridgeFile(){
 	}
 }
 
-void Demo::takeScreenshot(bool draw){
+void Demo::takeScreenshot(){
 
 	// Change this so that it renders an image using the dimensions for the window
 	// and saves that image
@@ -705,9 +743,23 @@ void Demo::takeScreenshot(bool draw){
 
 	// Name the image according to the simulation state
 	std::string filename = m_config.logfile_path + m_config.logfile_name;
-	if ( state == SimulationState::Formation ) { filename = filename + "_formation_"; }
-	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution_"; }
-	filename = filename + std::to_string(m_currentIt) + ".jpg";
+
+	// 6 digits in the beginning
+	std::string time_str = std::to_string( (int) m_elapsedTime);
+	if (time_str.size() < 6) {
+		std::string zero_str(6 - time_str.size(), '0');
+		time_str = zero_str + time_str;
+	}
+
+	// Add the timestamp to the filename
+	filename = filename + time_str;
+
+	// Add an indicator for whether this was taken during bridge formation or dissolution
+	if ( state == SimulationState::Formation ) { filename = filename + "_formation"; }
+	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution"; }
+
+	// Add file extension
+	filename = filename + ".jpg";
 
 	// Create the target directory if none exists
 	fs::create_directories(m_config.logfile_path);
