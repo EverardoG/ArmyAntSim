@@ -163,6 +163,7 @@ private:
 	double m_elapsedTime = 0; // in seconds (real-time =/= from simulation time)
 	double m_elapsedTimeDissolution = 0; //Duration of the dissolution phase (s)
 	double m_elapsedTimeBridge = 0; //Duration of the bridge formation phase (s)
+	double m_timexPosCheck = 0;
 	double m_length = 0; // Bridge length (Body length)
 	double m_height = 0; // Bridge height (Body length)
 	int m_currentIt = 0; // Current iteration
@@ -171,6 +172,7 @@ private:
 
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached
+	float m_avg_x_pos = 0;
 
 	b2Vec2 m_startP; //Start point of the bridge (on the left side of the obstacle
 	b2Vec2 m_endP; //End point of the bridge (on the left side of the obstacle

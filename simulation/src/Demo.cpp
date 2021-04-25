@@ -156,8 +156,8 @@ void Demo::demoLoop(){
 
 				if(!addRobot()){
 					m_stacking = true;
-					printf("robot stacking \n");
-					break;
+					printf("Robot stacking. Ending simulation. \n");
+					state = SimulationState::End;
 				}
 
 				m_robotController.step(m_config.window.WINDOW_X_PX);
@@ -209,6 +209,15 @@ void Demo::demoLoop(){
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
 					takeScreenshot(true);
+				}
+
+				// End the simulation if the average x position has not moved to the right in 10 seconds
+				if (m_elapsedTime >= m_timexPosCheck + 10.0){
+					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
+						state = SimulationState::End;
+					}
+					m_timexPosCheck = m_elapsedTime;
+					m_avg_x_pos = m_robotController.getAvgPos().x;
 				}
 
 				m_elapsedTime += 1.f/FPS;

@@ -245,6 +245,8 @@ public:
 	*/
 	double calculateSpeedsToGoal(b2Vec2 m_goal_pos);
 
+	b2Vec2 getAvgPos();
+
 	/**
 	 * Flag used to notify when a new robot enter the bridge state.
 	 * It is used to write a new entry in the bridge file.

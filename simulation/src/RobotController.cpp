@@ -380,6 +380,7 @@ void RobotController::robotOut(double end_x, int id){
 	int pos = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
 	// std::cout << "pos: " << pos << " | end_x: " << end_x << std::endl;
 	if(pos > end_x){
+		std::cout << "Planning to delete Robot " << id << std::endl;
 		m_robotToDestroy.push_back(id);
 //		removeRobot(id);
 	}
@@ -519,8 +520,8 @@ void RobotController::step(double end_x){
 			    if (m_robotVector[i]->checkGripp(m_robotVector[i]->m_movingSide)){
 				    invertMovingWheel(*m_robotVector[i]);
 			    }
-			    else{
-				    printf("\n wrong moving wheel \n");}
+			    // else{
+				    // printf("\n wrong moving wheel \n");}
 			    destroyJoints(*m_robotVector[i], m_robotVector[i]->m_movingSide);
 			    m_robotVector[i]->moveBodyWithMotor();
 //	    	}
@@ -530,7 +531,7 @@ void RobotController::step(double end_x){
 	    	if(m_robotVector[i]->getDelay() == int(- m_controllerParam.time_before_pushing*FPS)){ //m_robotVector[i]->m_pushing_delay){ //
 ////			    m_robot[i].m_ready=false;
 //	    		invertMovingWheel(m_robotVector.at(i));
-	    		printf("\n Robot moving for too long, it is pushing \n");
+	    		// printf("\n Robot moving for too long, it is pushing \n");
 	    		if(robotPushing(*m_robotVector[i])){
 	    			setRobotState(*m_robotVector[i],WALK);
 	    		}
@@ -631,4 +632,16 @@ int RobotController::getNbRobotsBlocked(){
 
 int RobotController::getNbRobotsReachedGoal() {
 	return m_robots_reached_goal.size();
+}
+
+b2Vec2 RobotController::getAvgPos(){
+	b2Vec2 avg_pos = b2Vec2(0.0,0.0);
+	// sum all of the positions
+	for (int i=0; i<m_robotVector.size(); i++){
+		avg_pos = avg_pos + m_robotVector[i]->getPosition();
+	}
+	// divide to get the average
+	avg_pos.x = avg_pos.x/m_robotVector.size();
+	avg_pos.y = avg_pos.y/m_robotVector.size();
+	return avg_pos;
 }
