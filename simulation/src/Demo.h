@@ -170,8 +170,9 @@ private:
 
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached
-	float m_avg_x_pos = 0;
-	bool m_simulationStuck = false;
+	bool m_tooLongDissolution = false; //Flag to indicate the dissolution step is taking unreasonably long
+	float m_avg_x_pos = 0; // average x position of all active robots
+	bool m_simulationStuck = false; // Flag to indicate robots have not moved significantly in a long time
 
 	b2Vec2 m_startP; //Start point of the bridge (on the left side of the obstacle
 	b2Vec2 m_endP; //End point of the bridge (on the left side of the obstacle

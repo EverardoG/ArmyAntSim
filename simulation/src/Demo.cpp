@@ -223,6 +223,12 @@ void Demo::demoLoop(){
 
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
+
+				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
+				if (m_elapsedTime - m_elapsedTimeBridge > 10800) {
+					m_tooLongDissolution;
+				}
+
 				break;
 		}
 		// Testing things
@@ -258,7 +264,7 @@ void Demo::demoLoop(){
 				state = SimulationState::End;
 			}
 			// End the simulation early if robots are stacking or robots are stuck
-			if (m_stacking || m_simulationStuck){
+			if (m_stacking || m_simulationStuck || m_tooLongDissolution){
 				state = SimulationState::End;
 			}
 		}
@@ -572,6 +578,10 @@ void Demo::writeResultFile(){
 	m_logFile << "	Bridge formation step duration: "<< std::to_string(m_elapsedTimeBridge) << " s\n\n";
 	m_logFile << "	Bridge dissolution step duration: "<< std::to_string(m_elapsedTimeDissolution) << " s\n\n";
 	m_logFile << "	Simulation duration: "<< std::to_string(m_elapsedTime) << " s\n\n";
+	m_logFile << "  Early termination flags:\n";
+	m_logFile << "    m_stacking: " << std::to_string(m_stacking) << "\n";
+	m_logFile << "    m_simulationStuck: " << std::to_string(m_simulationStuck) << "\n";
+	m_logFile << "    m_tooLongDissolution: " << std::to_string(m_tooLongDissolution) << "\n\n";
 
 	/** Controller parameters */
 	m_logFile << "Controller parameters: \n";
