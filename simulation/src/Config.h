@@ -43,6 +43,7 @@ struct sSimulation{
 	double gravity;
 	bool use_delay;
 	bool gaussian_delay;
+	bool smart_dissolution;
 	double robot_delay;
 	double robot_distance;
 	double robot_phase;
@@ -60,6 +61,7 @@ struct sController{
 	double walk_delay;
 	double time_before_pushing;
 	int max_robot_window;
+	bool infinite_robots;
 	double stability_condition;
 	float gain;
 };

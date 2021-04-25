@@ -31,24 +31,24 @@
 RobotController::RobotController() {
 }
 
-RobotController::RobotController(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, double m_to_px) {
+RobotController::RobotController(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, b2Vec2 posGoal, double m_to_px) {
 	m_controllerParam = controllerParam;
 	m_robotParam = robotParam;
-	m_robotVector.reserve(controllerParam.max_robot_window);
+	if (!controllerParam.infinite_robots) {m_robotVector.reserve(controllerParam.max_robot_window); }
 	m_M_TO_PX = m_to_px;
 	printf("size of vector %d, \n", m_robotVector.size());
 	m_terrainBody = terrain;
-
+	m_posGoal = posGoal;
 }
 
-void RobotController::create(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, double m_to_px) {
+void RobotController::create(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, b2Vec2 posGoal, double m_to_px) {
 	m_controllerParam = controllerParam;
 	m_robotParam = robotParam;
-	m_robotVector.reserve(controllerParam.max_robot_window);
+	if (!controllerParam.infinite_robots) {m_robotVector.reserve(controllerParam.max_robot_window); }
 	m_M_TO_PX = m_to_px;
 	printf("size of vector %d, \n", m_robotVector.size());
 	m_terrainBody = terrain;
-
+	m_posGoal = posGoal;
 }
 
 RobotController::~RobotController() {
@@ -77,7 +77,7 @@ void RobotController::setScale(double m_to_px){
 
 bool RobotController::createRobot(b2World* world, int delay, double posX, double posY, double angle){
 
-	if (m_robotVector.size() >= m_controllerParam.max_robot_window){
+	if (!m_controllerParam.infinite_robots && m_robotVector.size() >= m_controllerParam.max_robot_window){
 //		printf("the max number of robot in the screen has already been reached");
 		return false;
 	}
@@ -480,11 +480,19 @@ double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 
 void RobotController::step(double end_x){
 
+	// TODO: Add in built-in counting for robots that reached the goal
+
 	for (int i=0; i<m_robotVector.size(); i++){
 
 		if(m_robotVector[i]->getId()==-1){
 			printf("continue for loop \n");
 			continue;
+		}
+
+		// Update the map for robots that reached the goal if necessary
+		if (m_robotVector[i]->getPosition().x > m_posGoal.x && m_robotVector[i]->getPosition().y < m_posGoal.y) {
+			// Robot reached the goal. Set its id to true in the map
+			m_robots_reached_goal[m_robotVector[i]->getId()] = true;
 		}
 
 	    createGripRobots(*m_robotVector[i]);
@@ -621,4 +629,6 @@ int RobotController::getNbRobotsBlocked(){
 	return nb_blocked;
 }
 
-
+int RobotController::getNbRobotsReachedGoal() {
+	return m_robots_reached_goal.size();
+}

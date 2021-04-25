@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
 	ValueArg<bool>        visual_arg("", "enable_visualization", "Play the visualizer for the simulation", false, true, "BOOL bool true");
 	ValueArg<float>       gravity_arg("g", "gravity", "Magnitude of gravity in simulation in m/s^2", false, 9.8, "ACCEL float 9.8");
 	ValueArg<bool>        use_delay_arg("","use_delay", "Whether to spawn robots with time delay or distance delay. True: delay, False: distance", false, true, "BOOL bool true");
+	ValueArg<bool>        smart_dissolution_arg("", "smart_dissolution", "Whether to based dissolution off timing or robots reaching the goal. True: Robots reaching goal, False: Time-based dissolution", false, false, "BOOL bool false");
 	ValueArg<bool>        gaussian_delay_arg("", "gaussian_delay", "Whether to make time delay a guassian distribution or the same for each robot. True: Gaussian, False: Same for each", false, true, "BOOL bool true");
 
 	// Create Controller Parameters
@@ -76,6 +77,7 @@ int main(int argc, char* argv[])
 	ValueArg<float> walk_delay_arg("","walk_delay", "Pause delay in the walking state in s", false, 0.5,"SEC float 0.5");
 	ValueArg<float> push_delay_arg("", "push_delay", "Maximum duration of the movement before a robot is considered as pushing in s. The robot creates a grip after this time.", false, 1.0,"SEC float 1.0");
 	ValueArg<int> max_robots_arg("","max_robots", "Maximum number of robots in the window", false, 50, "NUM int 50");
+	ValueArg<bool> infinite_robots_arg("","infinite_robots", "True: Ignore the limit on maximmum number of robots. False: Limit number of robots to max_robots", false, false, "BOOL bool false");
 	ValueArg<float> stable_time_arg("", "stability_condition", "Time after which a bridge is considered stable in s", false, 60, "SEC float 60");
 	ValueArg<float> gain_arg("", "kp", "Gain applied to dynamic speed", false, 0.4, "FLOAT float 0.4");
 
@@ -105,6 +107,7 @@ int main(int argc, char* argv[])
 	cmd.add(gravity_arg);
 	cmd.add(use_delay_arg);
 	cmd.add(gaussian_delay_arg);
+	cmd.add(smart_dissolution_arg);
 	cmd.add(robot_distance_arg);
 	cmd.add(robot_phase_arg);
 	cmd.add(robot_delay_arg);
@@ -121,6 +124,7 @@ int main(int argc, char* argv[])
 	cmd.add(walk_delay_arg);
 	cmd.add(push_delay_arg);
 	cmd.add(max_robots_arg);
+	cmd.add(infinite_robots_arg);
 	cmd.add(stable_time_arg);
 	cmd.add(gain_arg);
 
@@ -158,6 +162,7 @@ int main(int argc, char* argv[])
 	cfg.simulation.gravity = gravity_arg.getValue();
 	cfg.simulation.use_delay = use_delay_arg.getValue();
 	cfg.simulation.gaussian_delay = gaussian_delay_arg.getValue();
+	cfg.simulation.smart_dissolution = smart_dissolution_arg.getValue();
 	cfg.simulation.robot_distance = robot_distance_arg.getValue();
 	cfg.simulation.robot_phase = robot_phase_arg.getValue();
 	cfg.simulation.robot_delay = robot_delay_arg.getValue();
@@ -173,6 +178,7 @@ int main(int argc, char* argv[])
 	cfg.controller.walk_delay = walk_delay_arg.getValue();
 	cfg.controller.time_before_pushing = push_delay_arg.getValue();
 	cfg.controller.max_robot_window = max_robots_arg.getValue();
+	cfg.controller.infinite_robots = infinite_robots_arg.getValue();
 	cfg.controller.stability_condition = stable_time_arg.getValue();
 	cfg.controller.gain = gain_arg.getValue();
 
