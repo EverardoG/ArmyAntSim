@@ -89,6 +89,10 @@ print("speed grid size: ", speed_grid.shape)
 # Plot the surface
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(kp_grid, speed_grid, dissolution_time_grid, cmap=cm.coolwarm, linewidth=0, antialiased=False)
+ax.set_xlabel("Kp Constant")
+ax.set_ylabel("Speed (rad/s)")
+ax.set_zlabel("Time to 10 Robots (s)")
+ax.set_title("Controller Sweep")
 
 # Add a color bar
 fig.colorbar(surf, shrink=0.5, aspect=5)
