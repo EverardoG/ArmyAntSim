@@ -147,6 +147,7 @@ void Demo::demoLoop(){
 	while (state != SimulationState::End) {
 		switch (state)
 		{
+			case SimulationState::Travel:
 			case SimulationState::Formation:
 
 				// Update the robot speeds dynamically if relevant
@@ -225,7 +226,7 @@ void Demo::demoLoop(){
 				m_currentIt ++;
 
 				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
-				if (m_elapsedTime - m_elapsedTimeBridge > 10800) {
+				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
 					m_tooLongDissolution;
 				}
 
@@ -239,28 +240,50 @@ void Demo::demoLoop(){
 		// Based on robots reaching the goal
 		if ( m_config.simulation.smart_dissolution ) {
 			// std::cout << "Smart dissolution is on" << std::endl;
-			// Switch the state to Dissolution if enough robots have reached the goal
-			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
-				// Get the number of robots in the final bridge
-				m_nbRobotsInBridgeState = m_robotController.getNbRobots(BRIDGE);
-				m_nbRobotsInBridge = m_nbRobotsInBridgeState + m_robotController.getNbRobotsBlocked();
-				m_elapsedTimeBridge = m_elapsedTime;
+			// Switch the state to Travel if one robot has reached the goal			
+			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 1 ) {
+				// Get the number of robots in the initial bridge
+				m_nbRobotsInBridgeStateInitial = m_robotController.getNbRobots(BRIDGE);
+				m_nbRobotsInBridgeInitial = m_nbRobotsInBridgeStateInitial + m_robotController.getNbRobotsBlocked();
+				m_elapsedTimeBridgeInitial = m_elapsedTime;
 				std::cout << "---------------------------------------" << std::endl;
-				std::cout << "Bridge Time: " << m_elapsedTimeBridge << std::endl;
+				std::cout << "Initial Bridge Time: " << m_elapsedTimeBridgeInitial << std::endl;
 				std::cout << "---------------------------------------" << std::endl;
-				m_length = getNewPathLength();
-				m_height = getBridgeHeight();
+				
+				// Store bridge characteristics
+				m_length_initial = getNewPathLength();
+				m_height_initial = getBridgeHeight();
 
+				state = SimulationState::Travel;
+				std::cout << "Switched to travel state." << std::endl;
+			}
+			// Switch to Dissolution once 10 robots have reached the goal
+			else if ( state == SimulationState::Travel && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
+				// Get the number of robots in the final bridge
+				m_nbRobotsInBridgeStateFinal = m_robotController.getNbRobots(BRIDGE);
+				m_nbRobotsInBridgeFinal = m_nbRobotsInBridgeStateFinal + m_robotController.getNbRobotsBlocked();
+				m_elapsedTimeBridgeFinal = m_elapsedTime;
+			
+				std::cout << "---------------------------------------" << std::endl;
+				std::cout << "Final Bridge Time: " << m_elapsedTimeBridgeFinal << std::endl;
+				std::cout << "---------------------------------------" << std::endl;
+			
+				// Store bridge characteristics
+				m_length_final = getNewPathLength();
+	                	m_height_final = getBridgeHeight();
+			
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
+
+				// Switch to dissolution state
 				state = SimulationState::Dissolution;
 				std::cout << "Switched to dissolution state." << std::endl;
 			}
 			// End the simulation if all robots have despawned after dissolving their bridge
 			else if ( state == SimulationState::Dissolution && m_robotController.getNbActiveRobots() == 0 ) {
-				m_elapsedTimeDissolution = m_elapsedTime - m_elapsedTimeBridge;
+				m_elapsedTimeDissolution = m_elapsedTime - m_elapsedTimeBridgeFinal;
 				state = SimulationState::End;
 			}
 			// End the simulation early if robots are stacking or robots are stuck
@@ -278,11 +301,11 @@ void Demo::demoLoop(){
 				// Get the number of robots in the final bridge if the simulation just switched
 				if (state == SimulationState::Formation) {
 					// Get the number of robots in the final bridge
-					m_nbRobotsInBridgeState = m_robotController.getNbRobots(BRIDGE);
-					m_nbRobotsInBridge = m_nbRobotsInBridgeState + m_robotController.getNbRobotsBlocked();
-					m_elapsedTimeBridge = m_elapsedTime;
-					m_length = getNewPathLength();
-					m_height = getBridgeHeight();
+					m_nbRobotsInBridgeStateInitial = m_robotController.getNbRobots(BRIDGE);
+					m_nbRobotsInBridgeInitial = m_nbRobotsInBridgeStateInitial + m_robotController.getNbRobotsBlocked();
+					m_elapsedTimeBridgeInitial = m_elapsedTime;
+					m_length_initial = getNewPathLength();
+					m_height_initial = getBridgeHeight();
 
 					// Set robots to use fixed speeds if they were previously using dynamic speeds
 					if (m_config.robot.dynamic_speed) {
@@ -295,7 +318,6 @@ void Demo::demoLoop(){
 				state = SimulationState::End;
 			}
 		}
-
 
 		// If the visualization is active, then take in keyboard inputs and act on them
 		if ( m_config.simulation.visualization ) {
@@ -575,7 +597,8 @@ void Demo::writeResultFile(){
 	m_logFile << "	Phase shift between robots: "<< std::to_string(m_config.simulation.robot_phase) << " rad\n";
 	m_logFile << "	Initial x position of the first robot: "<< std::to_string(m_config.simulation.robot_initial_posX) << " m\n";
 	m_logFile << "	Initial distance of the robot from the edge of the V: "<< std::to_string((m_terrain->getTopLeftCorner().x-m_config.simulation.robot_initial_posX)/m_config.robot.body_length) << " m\n";
-	m_logFile << "	Bridge formation step duration: "<< std::to_string(m_elapsedTimeBridge) << " s\n\n";
+	m_logFile << "	Bridge formation step duration: "<< std::to_string(m_elapsedTimeBridgeInitial) << " s\n\n";
+	m_logFile << "  Bridge travel step duration: "<< std::to_string(m_elapsedTimeBridgeFinal) << " s\n\n";
 	m_logFile << "	Bridge dissolution step duration: "<< std::to_string(m_elapsedTimeDissolution) << " s\n\n";
 	m_logFile << "	Simulation duration: "<< std::to_string(m_elapsedTime) << " s\n\n";
 	m_logFile << "  Early termination flags:\n";
@@ -598,16 +621,21 @@ void Demo::writeResultFile(){
 	m_logFile << "	Robot velocity "<< std::to_string(m_config.robot.speed) << " rad/s\n\n";
 
 	/** Bridge parameters */
-	if(m_nbRobotsInBridge >0){
+	if(m_nbRobotsInBridgeInitial >0){
 		m_logFile << "Bridge parameters: \n";
 		if(m_terrain->getType()==V_TERRAIN){
-			m_logFile << "	New path length: "<< std::to_string(m_length) << "\n";
-			m_logFile << "	Bridge height: "<< std::to_string(m_height) << "\n";
 			m_logFile << "	Bridge start: "<< std::to_string(m_startP.x) << ", "<< std::to_string(m_startP.y)<< "\n";
 			m_logFile << "	Bridge end: "<< std::to_string(m_endP.x) << ", "<< std::to_string(m_endP.y)<< "\n";
-		}
-		m_logFile << "	Number of robots in the bridge: "<< std::to_string(m_nbRobotsInBridge) << "\n\n";
-		m_logFile << "	Number of robots in bridge state: "<< std::to_string(m_nbRobotsInBridgeState) << "\n\n";
+		}	
+		m_logFile << "	New path length initial: "<< std::to_string(m_length_initial) << "\n";
+		m_logFile << "	Bridge height initial: "<< std::to_string(m_height_initial) << "\n";
+		m_logFile << "	Number of robots in the bridge initial: "<< std::to_string(m_nbRobotsInBridgeInitial) << "\n\n";
+		m_logFile << "	Number of robots in bridge state initial: "<< std::to_string(m_nbRobotsInBridgeStateInitial) << "\n\n";
+
+		m_logFile << "	New path length final: "<< std::to_string(m_length_final) << "\n";
+		m_logFile << "	Bridge height final: "<< std::to_string(m_height_final) << "\n";
+		m_logFile << "	Number of robots in the bridge final: "<< std::to_string(m_nbRobotsInBridgeFinal) << "\n\n";
+		m_logFile << "	Number of robots in bridge state final: "<< std::to_string(m_nbRobotsInBridgeStateFinal) << "\n\n";
 
 		if(m_stableBridge){
 		  m_logFile << "The bridge is STABLE \n";
@@ -696,7 +724,7 @@ void Demo::writeBridgeFile(){
 }
 
 void Demo::takeScreenshot(){
-
+	std::cout << "TAKING SCREENSHOT" << std::endl;
 	// Change this so that it renders an image using the dimensions for the window
 	// and saves that image
 	// m_config.window.WINDOW_X_PX
@@ -753,18 +781,15 @@ void Demo::takeScreenshot(){
 
 	// Add the timestamp to the filename
 	filename = filename + time_str;
-
 	// Add an indicator for whether this was taken during bridge formation or dissolution
-	if ( state == SimulationState::Formation ) { filename = filename + "_formation"; }
-	else if ( state == SimulationState::Dissolution ) {	filename = filename + "_dissolution"; }
-
+        if ( state == SimulationState::Formation ) { filename = filename + "_formation"; }
+	else if ( state == SimulationState::Travel ) { filename = filename + "_travel"; }
+	else if (state == SimulationState::Dissolution ) { filename = filename + "_dissolution"; }
 	// Add file extension
 	filename = filename + ".jpg";
-
 	// Create the target directory if none exists
 	fs::create_directories(m_config.logfile_path);
-
 	// Save the image
 	image.saveToFile(filename);
-
+	std::cout << "filename: " << filename << std::endl;
 }

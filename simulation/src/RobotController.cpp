@@ -36,7 +36,7 @@ RobotController::RobotController(config::sController controllerParam, config::sR
 	m_robotParam = robotParam;
 	if (!controllerParam.infinite_robots) {m_robotVector.reserve(controllerParam.max_robot_window); }
 	m_M_TO_PX = m_to_px;
-	printf("size of vector %d, \n", m_robotVector.size());
+	printf("size of vector %ld, \n", m_robotVector.size());
 	m_terrainBody = terrain;
 	m_posGoal = posGoal;
 }
@@ -46,7 +46,7 @@ void RobotController::create(config::sController controllerParam, config::sRobot
 	m_robotParam = robotParam;
 	if (!controllerParam.infinite_robots) {m_robotVector.reserve(controllerParam.max_robot_window); }
 	m_M_TO_PX = m_to_px;
-	printf("size of vector %d, \n", m_robotVector.size());
+	printf("size of vector %ld, \n", m_robotVector.size());
 	m_terrainBody = terrain;
 	m_posGoal = posGoal;
 }
@@ -279,9 +279,10 @@ void RobotController::setRobotState(Robot& robot, e_state robotState){
 
 //				robot.blockMotorRotation(LEFT);
 //				robot.blockMotorRotation(RIGHT);
-
-				robot.limitMotorRotation(LEFT, 30/RAD_TO_DEG);
-				robot.limitMotorRotation(RIGHT, 30/RAD_TO_DEG);
+				
+				float motor_limit_deg = 5;
+				robot.limitMotorRotation(LEFT, motor_limit_deg/RAD_TO_DEG);
+				robot.limitMotorRotation(RIGHT, motor_limit_deg/RAD_TO_DEG);
 
 				/*works even when consider the motor of the moving wheel instead of the one of the wheel that is attached because of the condition
 				* that the wheels cannot rotate --> abs(angle of left wheel) == abs(angle of right wheel)*/
@@ -456,21 +457,36 @@ void RobotController::SetGlobalSpeed(double desired_speed){
 // also option for dynamic speed vs fixed speed in config
 // maybe change delay instead of speed (this is more portable for real robot)
 
-double RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
+void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 	// Calculates the speed for every robot so that the robots move toward the desired goal
 	for (int i=0; i<m_robotVector.size(); i++){
-		float desired_x = m_goal_pos.x;
-		float error_x = desired_x - m_robotVector[i]->getPosition().x;
-		float desired_speed = m_controllerParam.gain * log(error_x) + m_robotParam.speed;
-		if(isnan(desired_speed)){
-			desired_speed = 0.1;
-		}
+		//float desired_x = m_goal_pos.x;
+		float xd = m_goal_pos.x;
+		float k = m_controllerParam.gain;
+		float L = 2*3.14; // m_robotParam.speed;
+		// float offset = 1/k * log((L/0.1 - 1)*pow(2.72, k*desired_x));
+		float x0 = xd - 1/k * log(L/0.5-1);
+		//float desired_speed = L/(1+pow(2.72,(-k*(m_robotVector[i]->getPosition().x - offset))));
+		float desired_speed = L/(1+pow(2.72, k*(m_robotVector[i]->getPosition().x - x0)));
+		//if (i == 0){
+		    //std::cout << "e: " << pow(2.72, k*desired_x) << std::endl;
+		    //std::cout << "log: " << log((L/0.1-1)*pow(2.72, k*desired_x)) << std::endl;
+		    //std::cout << "offset: " << offset << std::endl;
+		    //std::cout << "k " << k << "\nL "<< L << "\ndesired_x " << desired_x << std::endl;
+		    //std::cout << "desired_speed: " << desired_speed << std::endl;
+		//}
+		//float error_x = desired_x - m_robotVector[i]->getPosition().x;
+		//float desired_speed = m_controllerParam.gain * log(error_x) + m_robotParam.speed;
+		//if(isnan(desired_speed)){
+		//	desired_speed = 0.1;
+		//}
 
 		// Note: this is also triggered at the beginning of the simulation
 		// Consider just making the island higher up
 		// May not matter
 		float desired_y = m_goal_pos.y;
-		if(m_robotVector[i]->getPosition().y < desired_y){
+		// float stop_x = xd-1*m_robotParam.body_length;
+		if(m_robotVector[i]->getPosition().y < desired_y && m_robotVector[i]->getPosition().x > xd-2*m_robotParam.body_length){
 			desired_speed = m_robotParam.speed;
 		}
 
@@ -502,7 +518,7 @@ void RobotController::step(double end_x){
 
 
 	    if(m_robotVector[i]->isReady()){
-
+	    //if (true) {
 	    	if(m_robotVector[i]->getState()==BRIDGE){
 	    		m_nbRobInBridge--;
 	    		if(m_nbRobInBridge==0){
@@ -528,7 +544,10 @@ void RobotController::step(double end_x){
 	    }
 
 	    if(m_robotVector[i]->isMoving()){
-	    	if(m_robotVector[i]->getDelay() == int(- m_controllerParam.time_before_pushing*FPS)){ //m_robotVector[i]->m_pushing_delay){ //
+	    	//Update the robot speed
+		m_robotVector[i]->moveBodyWithMotor();
+		// Figure out if the robot is pushing
+		if(m_robotVector[i]->getDelay() == int(- m_controllerParam.time_before_pushing*FPS)){ //m_robotVector[i]->m_pushing_delay){ //
 ////			    m_robot[i].m_ready=false;
 //	    		invertMovingWheel(m_robotVector.at(i));
 	    		// printf("\n Robot moving for too long, it is pushing \n");

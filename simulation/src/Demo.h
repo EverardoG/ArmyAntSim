@@ -32,7 +32,7 @@
 
 #include <random>
 
-enum SimulationState { Formation, Dissolution, End };
+enum SimulationState { Formation, Travel, Dissolution, End };
 
 /** @class MyContactListener_v2
  * This class is a listener on the box2D body contacts. In case of contact it calls the RobotController::findContactRobots(contact) method
@@ -160,13 +160,18 @@ private:
 	int m_nbRobots = 0; //Number of robots created
 	double m_elapsedTime = 0; // in seconds (real-time =/= from simulation time)
 	double m_elapsedTimeDissolution = 0; //Duration of the dissolution phase (s)
-	double m_elapsedTimeBridge = 0; //Duration of the bridge formation phase (s)
+	double m_elapsedTimeBridgeInitial = 0; //Duration of the bridge formation phase (s)
 	double m_timexPosCheck = 0;
-	double m_length = 0; // Bridge length (Body length)
-	double m_height = 0; // Bridge height (Body length)
+	double m_length_initial = 0; // Bridge length (Body length)
+	double m_height_initial = 0; // Bridge height (Body length)
 	int m_currentIt = 0; // Current iteration
-	int m_nbRobotsInBridge = 0; // Number of robots involved in the bridge structure, ie the ones in bridge state + the ones stuck under the structure
-	int m_nbRobotsInBridgeState = 0; // Number of robots in the bridge state
+	int m_nbRobotsInBridgeInitial = 0; // Number of robots involved in the bridge structure, ie the ones in bridge state + the ones stuck under the structure
+	int m_nbRobotsInBridgeStateInitial = 0; // Number of robots in the bridge state
+	double m_elapsedTimeBridgeFinal = 0; //Duration of the bridge formation phase (s)
+	double m_length_final = 0; // Bridge length (Body length)
+	double m_height_final = 0; // Bridge height (Body length)
+	int m_nbRobotsInBridgeFinal = 0; // Number of robots involved in the bridge structure, ie the ones in bridge state + the ones stuck under the structure
+	int m_nbRobotsInBridgeStateFinal = 0; // Number of robots in the bridge state
 
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached

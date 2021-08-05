@@ -243,7 +243,7 @@ public:
 	/**
 	 *
 	*/
-	double calculateSpeedsToGoal(b2Vec2 m_goal_pos);
+	void calculateSpeedsToGoal(b2Vec2 m_goal_pos);
 
 	b2Vec2 getAvgPos();
 
