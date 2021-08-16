@@ -462,10 +462,10 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 	for (int i=0; i<m_robotVector.size(); i++){
 		//float desired_x = m_goal_pos.x;
 		float xd = m_goal_pos.x;
-		float k = m_controllerParam.gain;
+		float k = m_controllerParam.param1;
+		float final_speed = m_controllerParam.param2;
 		float L = 2*3.14; // m_robotParam.speed;
-		// float offset = 1/k * log((L/0.1 - 1)*pow(2.72, k*desired_x));
-		float x0 = xd - 1/k * log(L/0.5-1);
+		float x0 = xd - 1/k * log(L/final_speed-1);
 		//float desired_speed = L/(1+pow(2.72,(-k*(m_robotVector[i]->getPosition().x - offset))));
 		float desired_speed = L/(1+pow(2.72, k*(m_robotVector[i]->getPosition().x - x0)));
 		//if (i == 0){
@@ -493,6 +493,15 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 		// std::cout << desired_speed << std::endl;
 		m_robotVector[i]->setSpeed(desired_speed);
 	}
+}
+
+bool RobotController::checkTowering(){
+	for (int i=0; i<m_robotVector.size(); i++){
+		if (m_robotVector[i]->getPosition().y < 0.0){
+			return true;
+		}	
+	}
+	return false;
 }
 
 void RobotController::step(double end_x){

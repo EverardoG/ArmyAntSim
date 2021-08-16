@@ -64,6 +64,11 @@ struct sController{
 	bool infinite_robots;
 	double stability_condition;
 	float gain;
+	float param1;
+	float param2;
+	float param3;
+	float param4;
+	float param5;
 };
 
 struct sRobot{

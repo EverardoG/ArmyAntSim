@@ -1,0 +1,206 @@
+"""Utility functions for analyzing data
+"""
+
+from pathlib import Path
+from typing import Tuple, List
+import numpy as np
+import matplotlib.pyplot as plt
+
+class RobotInfo:
+    """Container for robot info stored in _bridge.txt
+    """
+    def __init__(self, timestamp: int, _id: int, position: np.ndarray, angle: float, joint1: np.ndarray, joint2: np.ndarray):
+        # angle is in radians
+        # not sure what joint1 and joint2 actually represent
+        self.id = _id
+        self.position = position
+        self.angle = angle
+        self.joint1 = joint1
+        self.joint2 = joint2
+        self.wheel_radius = 0.25
+        self.body_length = 1.02
+        self.timestamp = timestamp
+        self.jointpos1, self.jointpos2 = self.calculate_joint_positions()
+        self.joint1_box = get_circle_bounding_box(self.jointpos1, self.wheel_radius)
+        self.joint2_box = get_circle_bounding_box(self.jointpos2, self.wheel_radius)
+        self.box = self.get_bounding_box()
+
+    def get_bounding_box(self)->np.ndarray:
+        """Get the bounding box for the robot
+        """
+        print("New robot:")
+        print(f"  timestamp: {self.timestamp}")
+        print(f"  position: {self.position}")
+        print(f"  angle: {self.angle}")
+        print(f"  jointpos1: {self.jointpos1}")
+        print(f"  jointpos2: {self.jointpos2}")
+
+        print(f"   boundboxjoint1:\n{self.joint1_box}")
+        print(f"   boundboxjoint2:\n{self.joint2_box}")
+        joint_boxes = np.vstack((self.joint1_box, self.joint2_box))
+        left = min(joint_boxes[:,0])
+        right = max(joint_boxes[:,0])
+        bottom = max(joint_boxes[:,1])
+        top = min(joint_boxes[:,1])
+        box =  np.array([
+            [left, top],
+            [left, bottom],
+            [right, top],
+            [right, bottom]
+        ])
+        print(f"   overallbox:\n{box}")
+        return box
+
+    def calculate_joint_positions(self)->Tuple[np.ndarray, np.ndarray]:
+        """Calculate the joint positions for the flippy robot
+        """
+        center_to_wheel = 0.01 + self.wheel_radius
+        diff_vec = [center_to_wheel * np.cos(self.angle), center_to_wheel * np.sin(self.angle) ]
+        jointpos1 = self.position + diff_vec
+        jointpos2 = self.position - diff_vec
+        return jointpos1, jointpos2
+    
+    def plot(self, ax: plt.Axes, flip_colors: bool = False, plot_joint_boxes: bool = False, plot_full_box: bool = False):
+        """Plot a robot
+        y-axis is flipped to match simulator
+        """
+        # Create circles for joints
+        joint1_color = 'r'
+        joint2_color = 'b'
+        if flip_colors:
+            joint1_color = 'b'
+            joint2_color = 'r'
+        jointpos1_tuple = (self.jointpos1[0], -self.jointpos1[1])
+        joint1_circle = plt.Circle(jointpos1_tuple, self.wheel_radius, color=joint1_color)
+        jointpos2_tuple = (self.jointpos2[0], -self.jointpos2[1])
+        joint2_circle = plt.Circle(jointpos2_tuple, self.wheel_radius, color=joint2_color)
+
+        # Create line for body
+        bodyline = np.vstack((jointpos1_tuple, jointpos2_tuple))
+        print(f"bodyline:\n{bodyline}")
+
+        # Plot
+        ax.plot(bodyline[:,0], bodyline[:,1], color='black')
+        if plot_joint_boxes:
+            ax.plot(self.joint1_box[:,0], -self.joint1_box[:,1])
+            ax.plot(self.joint2_box[:,0], -self.joint2_box[:,1])
+        ax.add_patch(joint1_circle)
+        ax.add_patch(joint2_circle)
+
+def get_circle_bounding_box(position: np.ndarray, radius: float)->np.ndarray:
+    """Get the bounding box for a circle
+    """
+    bounding_box = np.full((4,2), position)
+    bounding_box[0,1] += radius # mid-right edge
+    bounding_box[1,1] -= radius # mid-left edge
+    bounding_box[2,0] += radius # mid-bottom edge
+    bounding_box[3,0] -= radius # mid-top edge
+    return bounding_box
+
+def get_robots_in_initial_bridge(bridge_file: Path)->List[RobotInfo]:
+    """Gets all the robots in the initial bridge from a _bridge.txt file
+
+    Args:
+        bridge_file (Path): directory for the _bridge.txt file
+
+    Returns:
+        List[RobotInfo]: list of robots in the initial bridge
+    """
+    # Open up the file
+    with open(bridge_file) as fp:
+        # Grab the initial timestamp for the bridge and initialize
+        # the container for robot info
+        line = fp.readline()
+        initial_bridge_timestamp = line.split(";")[0]
+        robots = []
+        while line.split(";")[0] == initial_bridge_timestamp:
+            info = line.split(";")
+            robot_info = RobotInfo(
+                    timestamp = int(info[0]),
+                    _id = int(info[1]),
+                    position = np.array([float(info[2]), float(info[3])]),
+                    angle = float(info[4]),
+                    joint1 = np.array([float(info[4]), float(info[5])]),
+                    joint2 = np.array([float(info[6]), float(info[7])])
+                    )
+            robots.append(robot_info)
+            line = fp.readline()
+        return robots
+
+def calculate_COM_from_robots(robots: List[RobotInfo])->np.ndarray:
+    """Calculates center of mass from robots
+    
+    Args:
+        robots (List[RobotInfo]): list of robots you want the center of mass of
+
+    Returns:
+        np.ndarray: 1x2 array representing COM as [x,y]
+    """
+    robot_positions_list = [np.expand_dims(robot.position, axis=0) for robot in robots]
+    robot_positions_arr = np.vstack(robot_positions_list)
+    position_avg = np.average(robot_positions_arr, axis=0)
+    return position_avg
+
+def calculate_bounding_box_from_robots(robots: List[RobotInfo])->np.ndarray:
+    """Calculate the bounding box around all the robots
+    
+    Args:
+        robots (List[RobotInfo]): list of robots you want the bounding box of
+
+    Returns:
+        np.ndarray: 4x2 array representing bounding box with xy coordinates 
+            Row 1: Top-Left
+            Row 2: Bottom-Left
+            Row 3: Top-Right
+            Row 4: Bottom-Right
+    """
+    bounding_boxes = [robot.get_bounding_box() for robot in robots]    
+    bounding_boxes_np = np.vstack(bounding_boxes)
+    print("robot bounding boxes:")
+    print(bounding_boxes_np)
+    left = np.min(bounding_boxes_np[:,0])
+    right = np.max(bounding_boxes_np[:,0])
+    top = np.min(bounding_boxes_np[:,1]) # remember y is flipped
+    bottom = np.max(bounding_boxes_np[:,1])
+    return np.array([
+        [left, top],
+        [left, bottom],
+        [right, top],
+        [right, bottom]
+        ])
+
+def calculate_center_of_bounding_box(bounding_box: np.ndarray)->np.ndarray:
+    """Calculate the center of a bounding box for robots
+
+    Args:
+        bounding_box (np.ndarray): 4x2 array representing the bounding box with xy coordinates
+            Row 1: Top-Left
+            Row 2: Bottom-Left
+            Row 3: Top-Right
+            Row 4: Bottom-Right
+
+    Returns:
+        np.ndarray: 1x2 array [x,y] center of the bounding box
+    """
+    return np.average(bounding_box, axis=0)
+
+
+
+if __name__ == "__main__":
+    robots = get_robots_in_initial_bridge(Path("/home/egonzalez/ArmyAntSim/temp/results_success2/_bridge.txt"))
+    print(robots)
+    com = calculate_COM_from_robots(robots)
+    print(com)
+    bounding_box = calculate_bounding_box_from_robots(robots)
+    print(bounding_box)
+    cob = calculate_center_of_bounding_box(bounding_box)
+    print(cob)
+
+    fig, ax = plt.subplots()
+    for robot in robots:
+        robot.plot(ax, plot_joint_boxes=False, plot_full_box=False)
+    ax.set_xlim(0, 20)
+    ax.set_ylim(-12,0)
+    ax.set_aspect('equal')
+    plt.show()
+

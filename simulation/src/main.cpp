@@ -80,7 +80,12 @@ int main(int argc, char* argv[])
 	ValueArg<bool> infinite_robots_arg("","infinite_robots", "True: Ignore the limit on maximmum number of robots. False: Limit number of robots to max_robots", false, false, "BOOL bool false");
 	ValueArg<float> stable_time_arg("", "stability_condition", "Time after which a bridge is considered stable in s", false, 60, "SEC float 60");
 	ValueArg<float> gain_arg("", "kp", "Gain applied to dynamic speed", false, 0.4, "FLOAT float 0.4");
-
+	ValueArg<float> control_param1_arg("", "p1", "parameter 1 for controller", false, 1.0, "FLOAT float 1.0");
+	ValueArg<float> control_param2_arg("", "p2", "parameter 2 for controller", false, 1.0, "FLOAT float 1.0");
+	ValueArg<float> control_param3_arg("", "p3", "parameter 3 for controller", false, 1.0, "FLOAT float 1.0");
+	ValueArg<float> control_param4_arg("", "p4", "parameter 4 for controller", false, 1.0, "FLOAT float 1.0");
+	ValueArg<float> control_param5_arg("", "p5", "parameter 5 for controller", false, 1.0, "FLOAT float 1.0");
+	
 	// Create Robots Parameters
 	ValueArg<float> body_length_arg("","body_length", "Body length of the robot in m", false, 1.02, "METERS float 1.02");
 	ValueArg<float> speed_arg("v", "robot_speed", "Rotational speed of the robot in rad/s", false, 2*PI, "RAD/S float 2*PI");
@@ -127,7 +132,12 @@ int main(int argc, char* argv[])
 	cmd.add(infinite_robots_arg);
 	cmd.add(stable_time_arg);
 	cmd.add(gain_arg);
-
+	cmd.add(control_param1_arg);
+	cmd.add(control_param2_arg);
+	cmd.add(control_param3_arg);
+	cmd.add(control_param4_arg);
+	cmd.add(control_param5_arg);
+	
 	// Add Robots parameters
 	cmd.add(body_length_arg);
 	cmd.add(speed_arg);
@@ -181,6 +191,11 @@ int main(int argc, char* argv[])
 	cfg.controller.infinite_robots = infinite_robots_arg.getValue();
 	cfg.controller.stability_condition = stable_time_arg.getValue();
 	cfg.controller.gain = gain_arg.getValue();
+	cfg.controller.param1 = control_param1_arg.getValue();
+	cfg.controller.param2 = control_param2_arg.getValue();
+	cfg.controller.param3 = control_param3_arg.getValue();
+	cfg.controller.param4 = control_param4_arg.getValue();
+	cfg.controller.param5 = control_param5_arg.getValue();
 
 	cfg.robot.body_length = body_length_arg.getValue();
 	cfg.robot.dynamic_speed = dynamic_speed_arg.getValue();

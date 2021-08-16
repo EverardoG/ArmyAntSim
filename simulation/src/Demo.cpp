@@ -76,6 +76,9 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "cliff") {
 		m_terrain = new CliffTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
+	else if (m_config.terrain.type == "island") {
+		m_terrain = new IslandTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
 	else if (m_config.terrain.type == "default") {
 		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
@@ -148,14 +151,20 @@ void Demo::demoLoop(){
 		switch (state)
 		{
 			case SimulationState::Travel:
-			case SimulationState::Formation:
+				writeBridgeFile();
 
+			case SimulationState::Formation:
+				
+			//	if (m_robotController.getNbActiveRobots() > 0){
+			//		std::cout << "angle: " << m_robotController.getRobot(0)->getAngle() << std::endl;
+			//	}
 				// Update the robot speeds dynamically if relevant
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal());
 				}
 
-				if(!addRobot()){
+				// Check if any robot has gotten up beyond the window
+				if(!addRobot() || m_robotController.checkTowering()){
 					m_stacking = true;
 					printf("Robot stacking.\n");
 				}
@@ -173,7 +182,7 @@ void Demo::demoLoop(){
 				}
 
 
-				writeBridgeFile();
+				//writeBridgeFile();
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
@@ -256,6 +265,9 @@ void Demo::demoLoop(){
 
 				state = SimulationState::Travel;
 				std::cout << "Switched to travel state." << std::endl;
+
+				// Save a screenshot of initial bridge
+				takeScreenshot();
 			}
 			// Switch to Dissolution once 10 robots have reached the goal
 			else if ( state == SimulationState::Travel && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
@@ -280,6 +292,9 @@ void Demo::demoLoop(){
 				// Switch to dissolution state
 				state = SimulationState::Dissolution;
 				std::cout << "Switched to dissolution state." << std::endl;
+
+				// Save a screenshot of the final bridge
+				takeScreenshot();
 			}
 			// End the simulation if all robots have despawned after dissolving their bridge
 			else if ( state == SimulationState::Dissolution && m_robotController.getNbActiveRobots() == 0 ) {

@@ -25,7 +25,7 @@
 /**@enum e_terrain_type
  * Different types of terrain used to do the simulation
  */
-enum e_terrain_type {DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX, V_STEPPER, CLIFF};
+enum e_terrain_type {DEFAULT, V_TERRAIN, V2BL_TERRAIN, RAMP, BOX, V_STEPPER, CLIFF, ISLAND};
 
 class Terrain {
 public:
