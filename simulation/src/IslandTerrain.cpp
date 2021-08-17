@@ -31,6 +31,8 @@ void IslandTerrain::createBody(b2World* world){
 	// Define points relevant to the bottom line
 	Point leftPoint = b2Vec2(0.0, m_posY);
 	Point rightPoint = b2Vec2(m_windowSize.x/ m_M_TO_PX, m_posY);
+	std::cout << "leftPoint.x: " << leftPoint.x << " | y: " << leftPoint.y << std::endl;
+	std::cout << "rightPoint.x: " << rightPoint.x << " | x: " << rightPoint.y << std::endl;
 	// Create the ground polygon
 	Polygon groundPolygon{
 		leftPoint,
@@ -50,6 +52,11 @@ void IslandTerrain::createBody(b2World* world){
 	float islandLeft = 15 * m_bodyLength;
 	float islandRight = 26 * m_bodyLength;
 	float islandBottom = islandTop+ m_bodyLength;
+
+	std::cout << "islandTop: " << islandTop << std::endl;
+	std::cout << "islandLeft: " << islandLeft << std::endl;
+	std::cout << "islandRight: " << islandRight << std::endl;
+	std::cout << "islandBottom: " << islandBottom << std::endl;
 //	float islandTop = cliffTop;
 //	float islandBottom = cliffTop + m_bodyLength;
 //	float islandLeft = cliffRightEdge + 6 * m_bodyLength;
