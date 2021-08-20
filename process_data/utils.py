@@ -28,15 +28,15 @@ class RobotInfo:
     def get_bounding_box(self)->np.ndarray:
         """Get the bounding box for the robot
         """
-        print("New robot:")
-        print(f"  timestamp: {self.timestamp}")
-        print(f"  position: {self.position}")
-        print(f"  angle: {self.angle}")
-        print(f"  jointpos1: {self.jointpos1}")
-        print(f"  jointpos2: {self.jointpos2}")
-
-        print(f"   boundboxjoint1:\n{self.joint1_box}")
-        print(f"   boundboxjoint2:\n{self.joint2_box}")
+        # print("New robot:")
+        # print(f"  timestamp: {self.timestamp}")
+        # print(f"  position: {self.position}")
+        # print(f"  angle: {self.angle}")
+        # print(f"  jointpos1: {self.jointpos1}")
+        # print(f"  jointpos2: {self.jointpos2}")
+        #
+        # print(f"   boundboxjoint1:\n{self.joint1_box}")
+        # print(f"   boundboxjoint2:\n{self.joint2_box}")
         joint_boxes = np.vstack((self.joint1_box, self.joint2_box))
         left = min(joint_boxes[:,0])
         right = max(joint_boxes[:,0])
@@ -49,7 +49,7 @@ class RobotInfo:
             [right, top],
             [left, top]
         ])
-        print(f"   overallbox:\n{box}")
+        # print(f"   overallbox:\n{box}")
         return box
 
     def calculate_joint_positions(self)->Tuple[np.ndarray, np.ndarray]:
@@ -78,7 +78,7 @@ class RobotInfo:
 
         # Create line for body
         bodyline = np.vstack((jointpos1_tuple, jointpos2_tuple))
-        print(f"bodyline:\n{bodyline}")
+        # print(f"bodyline:\n{bodyline}")
 
         # Plot
         ax.plot(bodyline[:,0], bodyline[:,1], color='black')
@@ -165,8 +165,8 @@ def calculate_bounding_box_from_robots(robots: List[RobotInfo])->np.ndarray:
     """
     bounding_boxes = [robot.get_bounding_box() for robot in robots]
     bounding_boxes_np = np.vstack(bounding_boxes)
-    print("robot bounding boxes:")
-    print(bounding_boxes_np)
+    # print("robot bounding boxes:")
+    # print(bounding_boxes_np)
     left = np.min(bounding_boxes_np[:,0])
     right = np.max(bounding_boxes_np[:,0])
     top = np.min(bounding_boxes_np[:,1]) # remember y is flipped
@@ -178,7 +178,7 @@ def calculate_bounding_box_from_robots(robots: List[RobotInfo])->np.ndarray:
         [right, top],
         [left, top]
         ])
-    print(box)
+    # print(box)
     return box
 
 def calculate_center_of_bounding_box(bounding_box: np.ndarray)->np.ndarray:
@@ -224,7 +224,10 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                 # robot getting accross the bridge
                 elif splitline[0] == "\tBridge" and splitline[1] == "dissolution":
                     # print(splitline)
-                    dissolution_time = float(splitline[4])
+                    try:
+                        dissolution_time = float(splitline[4])
+                    except:
+                        pass
     num_robots_travelled = 9 # 10 robots total, and travel state is triggered when 1st robot passes goal
     average_travel_time = travel_time/num_robots_travelled
     metrics = {

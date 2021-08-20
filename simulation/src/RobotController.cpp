@@ -461,13 +461,13 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
 	if (m_controllerParam.control_policy == "s_curve") {
 		// Calculates the speed for every robot so that the robots move toward the desired goal
 		for (int i=0; i<m_robotVector.size(); i++){
-			float xd = m_goal_pos.x;
+			float xd = m_goal_pos.x + m_controllerParam.param3;
 			float k = m_controllerParam.param1;
 			float final_speed = m_controllerParam.param2;
 			float L = 2*3.14; // m_robotParam.speed;
 			float x0 = xd - 1/k * log(L/final_speed-1);
 			float desired_speed = L/(1+pow(2.72, k*(m_robotVector[i]->getPosition().x - x0)));
-			float desired_y = m_goal_pos.y + m_controllerParam.param3;
+			float desired_y = m_goal_pos.y;
 			if(m_robotVector[i]->getPosition().y < desired_y && m_robotVector[i]->getPosition().x > xd-2*m_robotParam.body_length){
 				desired_speed = m_robotParam.speed;
 			}
