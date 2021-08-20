@@ -279,7 +279,7 @@ void RobotController::setRobotState(Robot& robot, e_state robotState){
 
 //				robot.blockMotorRotation(LEFT);
 //				robot.blockMotorRotation(RIGHT);
-				
+
 				float motor_limit_deg = 5;
 				robot.limitMotorRotation(LEFT, motor_limit_deg/RAD_TO_DEG);
 				robot.limitMotorRotation(RIGHT, motor_limit_deg/RAD_TO_DEG);
@@ -458,40 +458,22 @@ void RobotController::SetGlobalSpeed(double desired_speed){
 // maybe change delay instead of speed (this is more portable for real robot)
 
 void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos){
-	// Calculates the speed for every robot so that the robots move toward the desired goal
-	for (int i=0; i<m_robotVector.size(); i++){
-		//float desired_x = m_goal_pos.x;
-		float xd = m_goal_pos.x;
-		float k = m_controllerParam.param1;
-		float final_speed = m_controllerParam.param2;
-		float L = 2*3.14; // m_robotParam.speed;
-		float x0 = xd - 1/k * log(L/final_speed-1);
-		//float desired_speed = L/(1+pow(2.72,(-k*(m_robotVector[i]->getPosition().x - offset))));
-		float desired_speed = L/(1+pow(2.72, k*(m_robotVector[i]->getPosition().x - x0)));
-		//if (i == 0){
-		    //std::cout << "e: " << pow(2.72, k*desired_x) << std::endl;
-		    //std::cout << "log: " << log((L/0.1-1)*pow(2.72, k*desired_x)) << std::endl;
-		    //std::cout << "offset: " << offset << std::endl;
-		    //std::cout << "k " << k << "\nL "<< L << "\ndesired_x " << desired_x << std::endl;
-		    //std::cout << "desired_speed: " << desired_speed << std::endl;
-		//}
-		//float error_x = desired_x - m_robotVector[i]->getPosition().x;
-		//float desired_speed = m_controllerParam.gain * log(error_x) + m_robotParam.speed;
-		//if(isnan(desired_speed)){
-		//	desired_speed = 0.1;
-		//}
+	if (m_controllerParam.control_policy == "s_curve") {
+		// Calculates the speed for every robot so that the robots move toward the desired goal
+		for (int i=0; i<m_robotVector.size(); i++){
+			float xd = m_goal_pos.x;
+			float k = m_controllerParam.param1;
+			float final_speed = m_controllerParam.param2;
+			float L = 2*3.14; // m_robotParam.speed;
+			float x0 = xd - 1/k * log(L/final_speed-1);
+			float desired_speed = L/(1+pow(2.72, k*(m_robotVector[i]->getPosition().x - x0)));
+			float desired_y = m_goal_pos.y + m_controllerParam.param3;
+			if(m_robotVector[i]->getPosition().y < desired_y && m_robotVector[i]->getPosition().x > xd-2*m_robotParam.body_length){
+				desired_speed = m_robotParam.speed;
+			}
 
-		// Note: this is also triggered at the beginning of the simulation
-		// Consider just making the island higher up
-		// May not matter
-		float desired_y = m_goal_pos.y;
-		// float stop_x = xd-1*m_robotParam.body_length;
-		if(m_robotVector[i]->getPosition().y < desired_y && m_robotVector[i]->getPosition().x > xd-2*m_robotParam.body_length){
-			desired_speed = m_robotParam.speed;
+			m_robotVector[i]->setSpeed(desired_speed);
 		}
-
-		// std::cout << desired_speed << std::endl;
-		m_robotVector[i]->setSpeed(desired_speed);
 	}
 }
 
@@ -499,7 +481,7 @@ bool RobotController::checkTowering(){
 	for (int i=0; i<m_robotVector.size(); i++){
 		if (m_robotVector[i]->getPosition().y < 0.0){
 			return true;
-		}	
+		}
 	}
 	return false;
 }

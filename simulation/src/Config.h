@@ -69,6 +69,7 @@ struct sController{
 	float param3;
 	float param4;
 	float param5;
+	std::string control_policy;
 };
 
 struct sRobot{

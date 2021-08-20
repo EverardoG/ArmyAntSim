@@ -239,14 +239,19 @@ def get_metrics_from_folder(results_folder: Path)->Dict:
     robots = get_robots_in_initial_bridge(results_folder/"_bridge.txt")
     com = calculate_COM_from_robots(robots)
     box = calculate_bounding_box_from_robots(robots)
+    box_width = abs(np.max(box[:,0]) - np.min(box[:,0]))
+    box_height = abs(np.max(box[:,1])- np.min(box[:,1]))
     cob = calculate_center_of_bounding_box(box)
 
     results_file_metrics = get_metrics_from_results_file(results_folder/"_result.txt")
 
     metrics = {"num_robots": len(robots),
             "bounding_box": box[0:4],
+            "box_width": box_width,
+            "box_height": box_height,
             "cob": cob,
             "com": com,
+            "c_ratio": np.linalg.norm((cob - com)/np.array([box_width/2, box_height/2])),
             "robots":robots}
     metrics.update(results_file_metrics)
     return metrics
@@ -276,6 +281,6 @@ if __name__ == "__main__":
     folder_path = Path("/home/egonzalez/ArmyAntSim/temp/results_success2")
     visualize_initial_bridge(folder_path)
     metrics_dict = get_metrics_from_folder(folder_path)
-    desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time"]
+    desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "c_ratio"]
     for metric_name in desired_metrics:
         print(f"{metric_name}: {metrics_dict[metric_name]}")
