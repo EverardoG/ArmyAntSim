@@ -82,6 +82,6 @@ set_target_properties(Box2D PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # add executable
-add_executable(ArmyAntSim simulation/src/Config.cpp simulation/src/Demo.cpp simulation/src/helpers.cpp simulation/src/main.cpp simulation/src/RobotController.cpp simulation/src/Robot.cpp simulation/src/CliffTerrain.cpp simulation/src/BoxTerrain.cpp simulation/src/Ramp.cpp simulation/src/V2BLTerrain.cpp simulation/src/VStepper.cpp simulation/src/Vterrain.cpp simulation/src/DefaultTerrain.cpp simulation/src/IslandTerrain.cpp)
+add_executable(ArmyAntSim simulation/src/Config.cpp simulation/src/Demo.cpp simulation/src/helpers.cpp simulation/src/main.cpp simulation/src/RobotController.cpp simulation/src/Robot.cpp simulation/src/CliffTerrain.cpp simulation/src/BoxTerrain.cpp simulation/src/Ramp.cpp simulation/src/V2BLTerrain.cpp simulation/src/VStepper.cpp simulation/src/Vterrain.cpp simulation/src/DefaultTerrain.cpp simulation/src/IslandTerrain.cpp simulation/src/FlatTerrain.cpp)
 # link the Box2D library to the ArmyAntSim
 target_link_libraries(ArmyAntSim Box2D sfml-audio sfml-network sfml-window sfml-graphics sfml-system stdc++fs)

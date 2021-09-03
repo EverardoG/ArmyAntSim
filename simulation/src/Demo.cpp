@@ -79,6 +79,9 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "island") {
 		m_terrain = new IslandTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
+	else if (m_config.terrain.type == "flat") {
+		m_terrain = new FlatTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
+	}
 	else if (m_config.terrain.type == "default") {
 		m_terrain = new DefaultTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
@@ -154,7 +157,7 @@ void Demo::demoLoop(){
 				writeBridgeFile();
 
 			case SimulationState::Formation:
-				
+
 			//	if (m_robotController.getNbActiveRobots() > 0){
 			//		std::cout << "angle: " << m_robotController.getRobot(0)->getAngle() << std::endl;
 			//	}
@@ -197,6 +200,23 @@ void Demo::demoLoop(){
 				if(periodic_delay){
 					m_config.simulation.robot_delay = 2.5/(cos(PI/(18*60)*m_currentIt)*cos(PI/(18*60)*m_currentIt));
 				}
+
+				// End the simulation if the average x position has not moved to the right in 10 seconds
+				if (m_elapsedTime >= m_timexPosCheck + 60.0){
+					// std::cout << "m_avg_x_pos: " << m_avg_x_pos << std::endl;
+					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
+						std::cout << "Simulation is stuck" << std::endl;
+						m_simulationStuck = true;
+					}
+					m_timexPosCheck = m_elapsedTime;
+					m_avg_x_pos = m_robotController.getAvgPos().x;
+				}
+
+				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
+				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
+					m_tooLongDissolution;
+				}
+
 				break;
 
 			case SimulationState::Dissolution:
@@ -223,6 +243,7 @@ void Demo::demoLoop(){
 
 				// End the simulation if the average x position has not moved to the right in 10 seconds
 				if (m_elapsedTime >= m_timexPosCheck + 60.0){
+					// std::cout << "m_avg_x_pos: " << m_avg_x_pos << std::endl;
 					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
 						std::cout << "Simulation is stuck" << std::endl;
 						m_simulationStuck = true;
@@ -249,7 +270,7 @@ void Demo::demoLoop(){
 		// Based on robots reaching the goal
 		if ( m_config.simulation.smart_dissolution ) {
 			// std::cout << "Smart dissolution is on" << std::endl;
-			// Switch the state to Travel if one robot has reached the goal			
+			// Switch the state to Travel if one robot has reached the goal
 			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 1 ) {
 				// Get the number of robots in the initial bridge
 				m_nbRobotsInBridgeStateInitial = m_robotController.getNbRobots(BRIDGE);
@@ -258,7 +279,7 @@ void Demo::demoLoop(){
 				std::cout << "---------------------------------------" << std::endl;
 				std::cout << "Initial Bridge Time: " << m_elapsedTimeBridgeInitial << std::endl;
 				std::cout << "---------------------------------------" << std::endl;
-				
+
 				// Store bridge characteristics
 				m_length_initial = getNewPathLength();
 				m_height_initial = getBridgeHeight();
@@ -275,15 +296,15 @@ void Demo::demoLoop(){
 				m_nbRobotsInBridgeStateFinal = m_robotController.getNbRobots(BRIDGE);
 				m_nbRobotsInBridgeFinal = m_nbRobotsInBridgeStateFinal + m_robotController.getNbRobotsBlocked();
 				m_elapsedTimeBridgeFinal = m_elapsedTime;
-			
+
 				std::cout << "---------------------------------------" << std::endl;
 				std::cout << "Final Bridge Time: " << m_elapsedTimeBridgeFinal << std::endl;
 				std::cout << "---------------------------------------" << std::endl;
-			
+
 				// Store bridge characteristics
 				m_length_final = getNewPathLength();
 	                	m_height_final = getBridgeHeight();
-			
+
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
@@ -641,7 +662,7 @@ void Demo::writeResultFile(){
 		if(m_terrain->getType()==V_TERRAIN){
 			m_logFile << "	Bridge start: "<< std::to_string(m_startP.x) << ", "<< std::to_string(m_startP.y)<< "\n";
 			m_logFile << "	Bridge end: "<< std::to_string(m_endP.x) << ", "<< std::to_string(m_endP.y)<< "\n";
-		}	
+		}
 		m_logFile << "	New path length initial: "<< std::to_string(m_length_initial) << "\n";
 		m_logFile << "	Bridge height initial: "<< std::to_string(m_height_initial) << "\n";
 		m_logFile << "	Number of robots in the bridge initial: "<< std::to_string(m_nbRobotsInBridgeInitial) << "\n\n";

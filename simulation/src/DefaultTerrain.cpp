@@ -13,7 +13,10 @@
 // }
 
 DefaultTerrain::DefaultTerrain(b2World* world, config::sWindow windowParam,  config::sTerrain terrainParam, double bodyLength)
-: Terrain(world, windowParam, terrainParam, bodyLength){}
+: Terrain(world, windowParam, terrainParam, bodyLength){
+  m_M_TO_PX = m_windowSize.x /  25.0 * bodyLength;
+  m_posGoal = b2Vec2(15*bodyLength, 6*bodyLength);
+}
 
 DefaultTerrain::~DefaultTerrain() {
 	// TODO Auto-generated destructor stub

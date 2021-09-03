@@ -6,6 +6,8 @@ from typing import Tuple, List, Dict
 import numpy as np
 import matplotlib.pyplot as plt
 
+METRICS = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "lever_ratio_width", "lever_ratio_height"]
+
 class RobotInfo:
     """Container for robot info stored in _bridge.txt
     """
@@ -248,13 +250,18 @@ def get_metrics_from_folder(results_folder: Path)->Dict:
 
     results_file_metrics = get_metrics_from_results_file(results_folder/"_result.txt")
 
+    com_to_cob = cob - com
+    lever_ratio_width = com_to_cob[0]/(box_width/2)
+    lever_ratio_height = com_to_cob[1]/(box_height/2)
+
     metrics = {"num_robots": len(robots),
             "bounding_box": box[0:4],
             "box_width": box_width,
             "box_height": box_height,
             "cob": cob,
             "com": com,
-            "c_ratio": np.linalg.norm((cob - com)/np.array([box_width/2, box_height/2])),
+            "lever_ratio_width": lever_ratio_width,
+            "lever_ratio_height": lever_ratio_height,
             "robots":robots}
     metrics.update(results_file_metrics)
     return metrics
@@ -284,6 +291,6 @@ if __name__ == "__main__":
     folder_path = Path("/home/egonzalez/ArmyAntSim/temp/results_success2")
     visualize_initial_bridge(folder_path)
     metrics_dict = get_metrics_from_folder(folder_path)
-    desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "c_ratio"]
+    desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "lever_ratio_width", "lever_ratio_height"]
     for metric_name in desired_metrics:
         print(f"{metric_name}: {metrics_dict[metric_name]}")
