@@ -139,6 +139,59 @@ void Demo::init(){
 
 }
 
+struct compare
+{
+    int key;
+    compare(int const &i): key(i) {}
+
+    bool operator()(int const &i) {
+        return (i == key);
+    }
+};
+
+bool Demo::robotsMovingRight(){
+	bool robotsmovingright = true;
+	// Populate current x positions
+	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
+	{
+		Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
+		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
+	}
+	// Compare x positions to previous x positions
+	std::vector<double> deltaXs;
+	if (!m_prevPositionsX.empty())
+	{
+		// Compare current x positions againts previous x positions
+		for (std::pair<int, double> id_and_x : m_currPositionsX)
+		{
+			int id = id_and_x.first;
+			double x = id_and_x.second;
+			if (m_prevPositionsX.contains(id))
+			{
+				double currX = m_currPositionsX[id];
+				double prevX = m_prevPositionsX[id];
+				deltaXs.push_back(currX - prevX);
+			}
+		}
+		// Determine whether robots are generally moving to the right
+		double sumX = 0;
+		for (double deltaX : deltaXs)
+		{
+			// printf("deltaX: %f\n", deltaX);
+			sumX += deltaX;
+		}
+		// printf("sumX: %f\n", sumX);
+		if (sumX <= 0.0)
+		{
+			robotsmovingright = false;
+		}
+	}
+	// Update the positions
+	m_prevPositionsX = m_currPositionsX;
+
+	return robotsmovingright;
+}
+
 //Main demoLoop called in the main file: The demoLoop is structured in two cases: if the visualization is activated or not.
 // Both cases are then almost identical apart from the simulation part.
 void Demo::demoLoop(){
@@ -151,6 +204,12 @@ void Demo::demoLoop(){
 
 	// While the simulation is running
 	while (state != SimulationState::End) {
+		// Run non-case specific code
+		// printf("does anything here get run at allll???");
+
+
+
+		// Run case specific code
 		switch (state)
 		{
 			case SimulationState::Travel:
@@ -202,15 +261,15 @@ void Demo::demoLoop(){
 				}
 
 				// End the simulation if the average x position has not moved to the right in 10 seconds
-				if (m_elapsedTime >= m_timexPosCheck + 60.0){
-					// std::cout << "m_avg_x_pos: " << m_avg_x_pos << std::endl;
-					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
-						std::cout << "Simulation is stuck" << std::endl;
-						m_simulationStuck = true;
-					}
-					m_timexPosCheck = m_elapsedTime;
-					m_avg_x_pos = m_robotController.getAvgPos().x;
-				}
+				// if (m_elapsedTime >= m_timexPosCheck + 60.0){
+				// 	// std::cout << "m_avg_x_pos: " << m_avg_x_pos << std::endl;
+				// 	if (m_robotController.getAvgPos().x <= m_avg_x_pos){
+				// 		std::cout << "Simulation is stuck" << std::endl;
+				// 		m_simulationStuck = true;
+				// 	}
+				// 	m_timexPosCheck = m_elapsedTime;
+				// 	m_avg_x_pos = m_robotController.getAvgPos().x;
+				// }
 
 				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
 				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
@@ -241,17 +300,6 @@ void Demo::demoLoop(){
 					takeScreenshot();
 				}
 
-				// End the simulation if the average x position has not moved to the right in 10 seconds
-				if (m_elapsedTime >= m_timexPosCheck + 60.0){
-					// std::cout << "m_avg_x_pos: " << m_avg_x_pos << std::endl;
-					if (m_robotController.getAvgPos().x <= m_avg_x_pos){
-						std::cout << "Simulation is stuck" << std::endl;
-						m_simulationStuck = true;
-					}
-					m_timexPosCheck = m_elapsedTime;
-					m_avg_x_pos = m_robotController.getAvgPos().x;
-				}
-
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
 
@@ -262,10 +310,17 @@ void Demo::demoLoop(){
 
 				break;
 		}
-		// Testing things
-		// std::cout << m_robotController.getNbRobotsReachedGoal() << std::endl;
-		// std::cout << "Elapsed Time: " << m_elapsedTime << std::endl;
-		// Update the simulation state
+		// Run this code regardless of case
+		// End the simulation if the average x position has not moved to the right in 10 seconds
+		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
+		if (m_elapsedTime >= m_timexPosCheck + 10.0){
+			if (!robotsMovingRight())
+			{
+				std::cout << "Simulation is stuck" << std::endl;
+				m_simulationStuck = true;
+			}
+			m_timexPosCheck = m_elapsedTime;
+		}
 
 		// Based on robots reaching the goal
 		if ( m_config.simulation.smart_dissolution ) {
@@ -359,7 +414,7 @@ void Demo::demoLoop(){
 		if ( m_config.simulation.visualization ) {
 			sf::Event event;
 			while (window.pollEvent(event)) {
-				// "close requested" event: close the window
+				// "close requested" evm_timexPosCheckent: close the window
 				if (event.type == sf::Event::Closed) {
 					window.close();
 				}

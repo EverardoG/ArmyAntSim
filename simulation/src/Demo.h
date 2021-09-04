@@ -151,6 +151,8 @@ public:
 	 */
 	void writeBridgeFile();
 
+	bool robotsMovingRight();
+
 private:
 	sf::RenderWindow window; //SFML window used to display the simulation
 //	b2Vec2 m_gravity = b2Vec2(0.f, 0.f);
@@ -205,6 +207,12 @@ private:
 
 	// Set the initial state of the simulation
 	SimulationState state = SimulationState::Formation;
+
+	std::unordered_map<int, double> m_prevPositionsX;
+	std::unordered_map<int, double> m_currPositionsX;
+
+	// std::vector<Robot> m_currentRobotSnapshot;
+	// std::vector<Robot> m_prevRobotSnapshot;
 
 protected:
 	b2World* m_world = nullptr; // pointer on the Box2D world

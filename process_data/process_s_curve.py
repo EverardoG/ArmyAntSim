@@ -69,6 +69,13 @@ def plot_metric(metric_name:str, metrics_dict: Dict, ks: List, offsets: List):
     plt.ylabel(metric_name)
     plt.show()
 
+def write_incomplete_dirs_to_yaml(incomplete_dirs: List[str], filepath: str)->None:
+    import io
+    import yaml
+    yaml_dict = {"incomplete_dirs": incomplete_dirs}
+    with io.open(filepath, 'w', encoding='utf8') as outfile:
+        yaml.dump(yaml_dict, outfile, default_flow_style=False, allow_unicode=True)
+
 
 # Parse the commandline for an optional top directory to store results of these tests in
 parser = argparse.ArgumentParser(description="Process the sweep from the simulator.")
@@ -80,7 +87,7 @@ ks = []
 offsets = []
 metrics_dict = {}
 # bad_vals = []
-bad_dirs = []
+incomplete_dirs = []
 for root, dirs, files in os.walk(args.directory):
     if "_bridge.txt" in files and "_result.txt" in files:
         folder = root.split("/")[-1]
@@ -96,10 +103,11 @@ for root, dirs, files in os.walk(args.directory):
         #     bad_dirs.append(root)
         #     bad_vals.append((k,offset))
     else:
-        bad_dirs.append(root)
+        incomplete_dirs.append(root)
 
-PP.pprint(bad_dirs)
 # print(bad_vals)
+# print("incomplete_dirs")
+# for dir in bad_dirs:
 
 if args.metric is None:
     for metric_name in METRICS:
