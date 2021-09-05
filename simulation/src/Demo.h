@@ -177,6 +177,7 @@ private:
 	int m_nbRobotsInBridgeFinal = 0; // Number of robots involved in the bridge structure, ie the ones in bridge state + the ones stuck under the structure
 	int m_nbRobotsInBridgeStateFinal = 0; // Number of robots in the bridge state
 
+	bool m_towering = false; //Flag to indicate that the robots are towering
 	bool m_stacking = false; //Flag to indicate that the robots are stacking
 	bool m_stableBridge = false; //Flag to indicate that a stable bridge has been reached
 	bool m_tooLongDissolution = false; //Flag to indicate the dissolution step is taking unreasonably long

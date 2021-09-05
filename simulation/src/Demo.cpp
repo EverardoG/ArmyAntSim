@@ -151,16 +151,22 @@ struct compare
 
 bool Demo::robotsMovingRight(){
 	bool robotsmovingright = true;
+	double deltaXThreshold = m_config.robot.body_length;
 	// Populate current x positions
 	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
 	{
 		Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
 		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
 	}
-	// Compare x positions to previous x positions
+	// Compare x positions to previous x positions to
+	// see if robots are moving right
+	bool currentRobotsMovingRight = true;
+	bool robotsMovingRightByThreshold = true;
 	std::vector<double> deltaXs;
 	if (!m_prevPositionsX.empty())
 	{
+		printf("Previous positions was not empty");
+
 		// Compare current x positions againts previous x positions
 		for (std::pair<int, double> id_and_x : m_currPositionsX)
 		{
@@ -173,18 +179,38 @@ bool Demo::robotsMovingRight(){
 				deltaXs.push_back(currX - prevX);
 			}
 		}
-		// Determine whether robots are generally moving to the right
-		double sumX = 0;
-		for (double deltaX : deltaXs)
+		// Determine if no robots are moving to the right at least one body length
+		bool greaterThanThreshold = false;
+		for (double deltaX  : deltaXs)
 		{
-			// printf("deltaX: %f\n", deltaX);
-			sumX += deltaX;
+			if (deltaX > deltaXThreshold)
+			{
+				greaterThanThreshold = true;
+				// robotsMovingRightByThreshold = true;
+			}
 		}
-		// printf("sumX: %f\n", sumX);
-		if (sumX <= 0.0)
+		if (!greaterThanThreshold)
 		{
-			robotsmovingright = false;
+			robotsMovingRightByThreshold = false;
 		}
+	}
+	// Determine if any robots have despawned since the last check
+	// If a robot despawned, that means it made it all the way to the right
+	// meaning it would have a positive deltaX
+	bool robotDespawned = false;
+	for (std::pair<int, double> id_and_x : m_prevPositionsX)
+	{
+		int id = id_and_x.first;
+		if (!m_currPositionsX.contains(id))
+		{
+			robotDespawned = true;
+		}
+	}
+	// If not current robots have moved right AND no robots have despawned since
+	// the last check, then the robots are NOT moving right
+	if (!robotsMovingRightByThreshold && !robotDespawned)
+	{
+		robotsmovingright = false;
 	}
 	// Update the positions
 	m_prevPositionsX = m_currPositionsX;
@@ -226,9 +252,15 @@ void Demo::demoLoop(){
 				}
 
 				// Check if any robot has gotten up beyond the window
-				if(!addRobot() || m_robotController.checkTowering()){
+				if(!addRobot()){
+					// Robots are stacking in the x direction
 					m_stacking = true;
 					printf("Robot stacking.\n");
+				}
+				else if (m_robotController.checkTowering()){
+					// Robots are stacking in the y direction
+					m_towering = true;
+					printf("Robots towering.\n");
 				}
 
 				m_robotController.step(m_config.window.WINDOW_X_PX);
@@ -311,9 +343,10 @@ void Demo::demoLoop(){
 				break;
 		}
 		// Run this code regardless of case
-		// End the simulation if the average x position has not moved to the right in 10 seconds
+		// End the simulation if no robot has moved right by a body length in 60 seconds
+		//     and no robot has despawned
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
-		if (m_elapsedTime >= m_timexPosCheck + 10.0){
+		if (m_elapsedTime >= m_timexPosCheck + 60.0){
 			if (!robotsMovingRight())
 			{
 				std::cout << "Simulation is stuck" << std::endl;
@@ -374,11 +407,15 @@ void Demo::demoLoop(){
 			}
 			// End the simulation if all robots have despawned after dissolving their bridge
 			else if ( state == SimulationState::Dissolution && m_robotController.getNbActiveRobots() == 0 ) {
-				m_elapsedTimeDissolution = m_elapsedTime - m_elapsedTimeBridgeFinal;
+				m_elapsedTimeDissolution = m_elapsedTime;
 				state = SimulationState::End;
+				std::cout << "---------------------------------------" << std::endl;
+				std::cout << "Finished Disolution Time: " << m_elapsedTimeDissolution << std::endl;
+				std::cout << "---------------------------------------" << std::endl;
 			}
 			// End the simulation early if robots are stacking or robots are stuck
-			if (m_stacking || m_simulationStuck || m_tooLongDissolution){
+			if (m_stacking || m_simulationStuck || m_tooLongDissolution || m_towering){
+				takeScreenshot();
 				state = SimulationState::End;
 			}
 		}
@@ -694,6 +731,7 @@ void Demo::writeResultFile(){
 	m_logFile << "	Simulation duration: "<< std::to_string(m_elapsedTime) << " s\n\n";
 	m_logFile << "  Early termination flags:\n";
 	m_logFile << "    m_stacking: " << std::to_string(m_stacking) << "\n";
+	m_logFile << "    m_towering: " << std::to_string(m_towering) << "\n";
 	m_logFile << "    m_simulationStuck: " << std::to_string(m_simulationStuck) << "\n";
 	m_logFile << "    m_tooLongDissolution: " << std::to_string(m_tooLongDissolution) << "\n\n";
 

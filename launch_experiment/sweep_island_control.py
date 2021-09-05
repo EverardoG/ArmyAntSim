@@ -10,11 +10,11 @@ args = parser.parse_args()
 # args.directory gets the directory
 
 # Set up the variables we'll be sweeping
-num_ks = 10
+# num_ks = 10
 k_start = 0.1
-k_mid = 1
+k_mid = 2.5
 k_end = 20
-k_vector = hstack((linspace(k_start, k_mid, num_ks), linspace(k_mid, k_end, num_ks)))
+k_vector = hstack((linspace(k_start, k_mid, 15), linspace(k_mid, k_end, 10)))
 # islandLeft is 15.3, islandRight is 26.52
 num_offsets = 20
 offset_start = 0

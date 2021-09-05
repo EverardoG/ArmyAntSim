@@ -204,9 +204,9 @@ def plot_island(ax: plt.Axes):
     ax.plot([15.3, 15.3, 26.52, 26.52, 15.3],[-5.1, -6.12, -6.12, -5.1, -5.1], color="black", linewidth=0.5)
 
 def get_metrics_from_results_file(results_file: Path)->Dict:
-    formation_time = None
-    travel_time = None
-    dissolution_time = None
+    formation_time = 0.0
+    travel_time = 0.0
+    dissolution_time = 0.0
     with open(results_file) as fp:
         for line in fp:
             splitline = line.split(" ")
@@ -221,13 +221,15 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                 # to the end of the travel time
                 elif splitline[2] == "Bridge":
                     # print(splitline)
-                    travel_time = float(splitline[6]) - formation_time
+                    travel_time_temp = float(splitline[6]) - formation_time
+                    if travel_time_temp > 0.0:
+                        travel_time = travel_time_temp
                 # Bridge dissolution. This is seoncds from end of travel to last
                 # robot getting accross the bridge
                 elif splitline[0] == "\tBridge" and splitline[1] == "dissolution":
                     # print(splitline)
                     try:
-                        dissolution_time = float(splitline[4])
+                        dissolution_time = float(splitline[4]) - travel_time - formation_time
                     except:
                         pass
     num_robots_travelled = 9 # 10 robots total, and travel state is triggered when 1st robot passes goal
