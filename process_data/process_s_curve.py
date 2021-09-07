@@ -215,6 +215,17 @@ for root, dirs, files in os.walk(args.directory):
     else:
         incomplete_dirs.append(root)
 
+PP.pprint(incomplete_dirs)
+print(len(incomplete_dirs))
+
+# Find files missing a _result.txt file
+no_result_dirs = []
+for root, dirs, files in os.walk(args.directory):
+    if "_result.txt" not in files:
+        no_result_dirs.append(root)
+        
+PP.pprint(no_result_dirs)
+
 if args.metric is None:
     for metric_name in METRICS:
         plot_metric(metric_name, metrics_dict, ks, offsets)
