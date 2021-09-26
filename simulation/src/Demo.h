@@ -176,6 +176,8 @@ private:
 	double m_height_final = 0; // Bridge height (Body length)
 	int m_nbRobotsInBridgeFinal = 0; // Number of robots involved in the bridge structure, ie the ones in bridge state + the ones stuck under the structure
 	int m_nbRobotsInBridgeStateFinal = 0; // Number of robots in the bridge state
+	int m_nbRobotsInBridgeEnd = 0; // NUmber of robots involved in the bridge structure when the simulation ends
+	int m_nbRobotsInBridgeStateEnd = 0; // Number of robots in the bridge state at the end of the simulation
 
 	bool m_towering = false; //Flag to indicate that the robots are towering
 	bool m_stacking = false; //Flag to indicate that the robots are stacking

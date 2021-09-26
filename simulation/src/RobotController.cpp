@@ -358,10 +358,19 @@ void RobotController::removeRobot(){
 		printf("remove 0 \n");
 
 		for (int i=0; i<m_robotToDestroy.size(); i++){
+			printf("m_robotToDestroy.size(): %ld\n", m_robotToDestroy.size());
+			printf("Grabbing id for i: %d\n", i);
 			int id = m_robotToDestroy[i];
-
+			printf("id is %d\n", id);
 			std::vector<Robot*>::iterator pRob =  m_robotVector.begin()+id;
-			delete *pRob;
+
+			printf("Setup pRob\n");
+			// This if statement is a quick-fix. Not sure why pRob is ever equal to
+			// m_robotVector.end() in the first place. It's a rare case that happens
+			// right at the end of the simulator and causes a segfault without this
+			// check
+			if (pRob != m_robotVector.end()) delete *pRob;
+			printf("Deleted pRob\n");
 			if(!(id == m_robotVector.size()-1)){
 				printf("remove 0b \n");
 				std::swap(m_robotVector[id], m_robotVector.back()); // check if same ?
@@ -373,7 +382,9 @@ void RobotController::removeRobot(){
 			printf("remove 2 \n");
 
 		}
+		printf("About to clear m_robotToDestroy\n");
 		m_robotToDestroy.clear();
+		printf("Successfully destroyed robot\n");
 	}
 }
 

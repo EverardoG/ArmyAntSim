@@ -138,6 +138,84 @@ def get_robots_in_initial_bridge(bridge_file: Path)->List[RobotInfo]:
             line = fp.readline()
         return robots
 
+def get_robots_from_important_times(bridge_file: Path, finished_travel_timestamp: int, full_sim_timestamp: int):
+    """ I know that the first row of the file is when the bridge initially forms
+    I need to know at what point the robots are finished travelling so that I can mark that
+    as the point where the bridge begins to dissolve. That timestamp helps me know what robots
+    represent the final bridge
+    I just need to look at the final row to know which robots were left in bridge state at the very end of the simulation
+    All robots in the bridge file are in a BRIDGE state
+    """
+    # Grab the final time ahead-of-time
+    with open(bridge_file) as fp:
+        lines = fp.readlines()
+        final_line = lines[-1]
+        final_time = int(final_line.split(";")[0])
+
+    # Open up the file
+    with open(bridge_file) as fp:
+        # Grab the robots that form the initial bridge
+        line = fp.readline()
+        initial_bridge_timestamp = line.split(";")[0]
+        initial_bridge_robots = []
+        while line.split(";")[0] == initial_bridge_timestamp:
+            info = line.split(";")
+            robot_info = RobotInfo(
+                    timestamp = int(info[0]),
+                    _id = int(info[1]),
+                    position = np.array([float(info[2]), float(info[3])]),
+                    angle = float(info[4]),
+                    joint1 = np.array([float(info[4]), float(info[5])]),
+                    joint2 = np.array([float(info[6]), float(info[7])])
+                    )
+            initial_bridge_robots.append(robot_info)
+            line = fp.readline()
+        # Get the row that has the correct finished_travel_timestamp or a timestamp
+        # that comes right before it.
+        # closest_finished_travel_timestamp = 0
+        while int(line.split(";")[0]) < finished_travel_timestamp:
+             line = fp.readline()
+        closest_finished_travel_timestamp = int(line.split(";")[0])
+        final_bridge_robots = []
+        while int(line.split(";")[0]) == closest_finished_travel_timestamp:
+            info = line.split(";")
+            robot_info = RobotInfo(
+                    timestamp = int(info[0]),
+                    _id = int(info[1]),
+                    position = np.array([float(info[2]), float(info[3])]),
+                    angle = float(info[4]),
+                    joint1 = np.array([float(info[4]), float(info[5])]),
+                    joint2 = np.array([float(info[6]), float(info[7])])
+                    )
+            final_bridge_robots.append(robot_info)
+            line = fp.readline()
+        # Grab the final time
+        while int(line.split(";")[0]) < final_time:
+            line = fp.readline()
+        # If that final time is numerically very close to the final time of the simulator
+        # Then it means that the rows with this timestamp accurately represent the final
+        # bridge
+        # If it isn't accurate, then it doesn't accurately represent the final bridge
+        final_dissolved_robots = []
+        while  int(line.split(";")[0]) == full_sim_timestamp:
+            info = line.split(";")
+            robot_info = RobotInfo(
+                    timestamp = int(info[0]),
+                    _id = int(info[1]),
+                    position = np.array([float(info[2]), float(info[3])]),
+                    angle = float(info[4]),
+                    joint1 = np.array([float(info[4]), float(info[5])]),
+                    joint2 = np.array([float(info[6]), float(info[7])])
+                    )
+            final_dissolved_robots.append(robot_info)
+            line = fp.readline()
+
+    return {
+        "initial_bridge_robots": initial_bridge_robots,
+        "final_bridge_robots" : final_bridge_robots,
+        "final_dissolved_robots" : final_dissolved_robots
+    }
+
 def calculate_COM_from_robots(robots: List[RobotInfo])->np.ndarray:
     """Calculates center of mass from robots
 
@@ -225,20 +303,37 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                     if travel_time_temp > 0.0:
                         travel_time = travel_time_temp
                 # Bridge dissolution. This is seoncds from end of travel to last
-                # robot getting accross the bridge
+                # robot leaving the sim
                 elif splitline[0] == "\tBridge" and splitline[1] == "dissolution":
-                    # print(splitline)
+                    # print(f"splitline:{splitline}")
                     try:
                         dissolution_time = float(splitline[4]) - travel_time - formation_time
+                        # if float(splitline[4]) == 0.0:
+                        #     print("ZERO DISSOLUTION", dissolution_time)
                     except:
                         pass
+                # Grab the early termination flags
+                elif splitline[-2] == "m_stacking:":
+                    m_stacking = splitline[-1][0]
+                elif splitline[-2] == "m_towering:":
+                    m_towering = splitline[-1][0]
+                elif splitline[-2] == "m_simulationStuck:":
+                    m_simulationStuck = splitline[-1][0]
+                elif splitline[-2] == "m_tooLongDissolution:":
+                    m_tooLongDissolution = splitline[-1][0]
     num_robots_travelled = 9 # 10 robots total, and travel state is triggered when 1st robot passes goal
     average_travel_time = travel_time/num_robots_travelled
+    # if dissolution_time < 0.0:
+    #     print("FOUND ZERO")
     metrics = {
         "formation_time": formation_time,
         "travel_time": travel_time,
         "dissolution_time": dissolution_time,
-        "average_travel_time": average_travel_time
+        "average_travel_time": average_travel_time,
+        "m_stacking": m_stacking,
+        "m_towering": m_towering,
+        "m_simulationStuck": m_simulationStuck,
+        "m_tooLongDissolution": m_tooLongDissolution
         }
     return metrics
 
@@ -266,6 +361,9 @@ def get_metrics_from_folder(results_folder: Path)->Dict:
             "lever_ratio_height": lever_ratio_height,
             "robots":robots}
     metrics.update(results_file_metrics)
+    travel_time_ends_timestamp = int((results_file_metrics["formation_time"] + results_file_metrics["travel_time"]) * 60)
+    full_sim_timestamp = travel_time_ends_timestamp + int(results_file_metrics["dissolution_time"]*60)
+    metrics["robots_at_times"] = get_robots_from_important_times(results_folder/"_bridge.txt", travel_time_ends_timestamp, full_sim_timestamp)
     return metrics
 
 def visualize_initial_bridge(results_folder: Path)->None:

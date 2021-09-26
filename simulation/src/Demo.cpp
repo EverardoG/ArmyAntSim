@@ -150,13 +150,17 @@ struct compare
 };
 
 bool Demo::robotsMovingRight(){
+	printf("--robotsMovingRight-----\n");
 	bool robotsmovingright = true;
 	double deltaXThreshold = m_config.robot.body_length;
 	// Populate current x positions
+	printf("Getting current robot positions\n");
+	m_currPositionsX.clear();
 	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
 	{
 		Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
 		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
+		printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
 	}
 	// Compare x positions to previous x positions to
 	// see if robots are moving right
@@ -165,7 +169,7 @@ bool Demo::robotsMovingRight(){
 	std::vector<double> deltaXs;
 	if (!m_prevPositionsX.empty())
 	{
-		printf("Previous positions was not empty");
+		printf("Previous positions was not empty\n");
 
 		// Compare current x positions againts previous x positions
 		for (std::pair<int, double> id_and_x : m_currPositionsX)
@@ -194,26 +198,34 @@ bool Demo::robotsMovingRight(){
 			robotsMovingRightByThreshold = false;
 		}
 	}
+	printf("robotsMovingRightByThreshold %d\n", robotsMovingRightByThreshold);
 	// Determine if any robots have despawned since the last check
 	// If a robot despawned, that means it made it all the way to the right
 	// meaning it would have a positive deltaX
+	printf("Determining if robot despawned...\n");
+	printf("%ld previous robots found.\n", m_prevPositionsX.size());
 	bool robotDespawned = false;
 	for (std::pair<int, double> id_and_x : m_prevPositionsX)
 	{
+		printf("  Previous robot:\n");
 		int id = id_and_x.first;
+		printf("    id: %d\n", id);
 		if (!m_currPositionsX.contains(id))
 		{
 			robotDespawned = true;
 		}
 	}
+	printf("robotDespawned %d\n", robotDespawned);
 	// If not current robots have moved right AND no robots have despawned since
 	// the last check, then the robots are NOT moving right
 	if (!robotsMovingRightByThreshold && !robotDespawned)
 	{
 		robotsmovingright = false;
 	}
+	printf("robotsmovingright %d\n", robotsmovingright);
 	// Update the positions
 	m_prevPositionsX = m_currPositionsX;
+	printf("--end-----\n");
 
 	return robotsmovingright;
 }
@@ -346,7 +358,8 @@ void Demo::demoLoop(){
 		// End the simulation if no robot has moved right by a body length in 60 seconds
 		//     and no robot has despawned
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
-		if (m_elapsedTime >= m_timexPosCheck + 60.0){
+		if (m_elapsedTime >= m_timexPosCheck + 10.0){
+			// Update the value for whether robots are stuck
 			if (!robotsMovingRight())
 			{
 				std::cout << "Simulation is stuck" << std::endl;
@@ -391,7 +404,7 @@ void Demo::demoLoop(){
 
 				// Store bridge characteristics
 				m_length_final = getNewPathLength();
-	                	m_height_final = getBridgeHeight();
+	      m_height_final = getBridgeHeight();
 
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
 				if (m_config.robot.dynamic_speed) {
@@ -471,6 +484,11 @@ void Demo::demoLoop(){
 
 	// This is where the simulation ends
 	printf("End simulation \n");
+	// Record a few last results of the run
+	takeScreenshot();
+	// Get the number of robots in the initial bridge
+	m_nbRobotsInBridgeStateEnd = m_robotController.getNbRobots(BRIDGE);
+	m_nbRobotsInBridgeEnd = m_nbRobotsInBridgeStateEnd + m_robotController.getNbRobotsBlocked();
 	if ( m_config.simulation.visualization && window.isOpen() ) {
 		window.close();
 	}
@@ -765,6 +783,9 @@ void Demo::writeResultFile(){
 		m_logFile << "	Bridge height final: "<< std::to_string(m_height_final) << "\n";
 		m_logFile << "	Number of robots in the bridge final: "<< std::to_string(m_nbRobotsInBridgeFinal) << "\n\n";
 		m_logFile << "	Number of robots in bridge state final: "<< std::to_string(m_nbRobotsInBridgeStateFinal) << "\n\n";
+
+		m_logFile << "  Number of robots in bridge end: " << std::to_string(m_nbRobotsInBridgeEnd) << "\n";
+		m_logFile << "  Number of robots in bridge state end:" << std::to_string(m_nbRobotsInBridgeStateEnd) << "\n";
 
 		if(m_stableBridge){
 		  m_logFile << "The bridge is STABLE \n";

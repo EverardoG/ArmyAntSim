@@ -24,6 +24,11 @@ offset_vector = linspace(offset_start, offset_end, num_offsets)
 print(k_vector)
 print(offset_vector)
 
+print("ks:")
+for k in k_vector: print(str(k))
+print("offsets:")
+for o in offset_vector: print(str(o))
+
 # Set up the root directory for this experiment
 root_directory = ""
 if args.directory:
@@ -53,5 +58,5 @@ for k in k_vector:
         command_list.append(command)
 
 # Execute the commands to run the sweep
-for command in command_list:
-    system(command)
+# for command in command_list:
+#     system(command)
