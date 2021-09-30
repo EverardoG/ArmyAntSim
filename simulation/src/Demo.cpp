@@ -150,17 +150,17 @@ struct compare
 };
 
 bool Demo::robotsMovingRight(){
-	printf("--robotsMovingRight-----\n");
+	// printf("--robotsMovingRight-----\n");
 	bool robotsmovingright = true;
 	double deltaXThreshold = m_config.robot.body_length;
 	// Populate current x positions
-	printf("Getting current robot positions\n");
+	// printf("Getting current robot positions\n");
 	m_currPositionsX.clear();
 	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
 	{
 		Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
 		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
-		printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
+		// printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
 	}
 	// Compare x positions to previous x positions to
 	// see if robots are moving right
@@ -169,7 +169,7 @@ bool Demo::robotsMovingRight(){
 	std::vector<double> deltaXs;
 	if (!m_prevPositionsX.empty())
 	{
-		printf("Previous positions was not empty\n");
+		// printf("Previous positions was not empty\n");
 
 		// Compare current x positions againts previous x positions
 		for (std::pair<int, double> id_and_x : m_currPositionsX)
@@ -198,34 +198,34 @@ bool Demo::robotsMovingRight(){
 			robotsMovingRightByThreshold = false;
 		}
 	}
-	printf("robotsMovingRightByThreshold %d\n", robotsMovingRightByThreshold);
+	// printf("robotsMovingRightByThreshold %d\n", robotsMovingRightByThreshold);
 	// Determine if any robots have despawned since the last check
 	// If a robot despawned, that means it made it all the way to the right
 	// meaning it would have a positive deltaX
-	printf("Determining if robot despawned...\n");
-	printf("%ld previous robots found.\n", m_prevPositionsX.size());
+	// printf("Determining if robot despawned...\n");
+	// printf("%ld previous robots found.\n", m_prevPositionsX.size());
 	bool robotDespawned = false;
 	for (std::pair<int, double> id_and_x : m_prevPositionsX)
 	{
-		printf("  Previous robot:\n");
+		// printf("  Previous robot:\n");
 		int id = id_and_x.first;
-		printf("    id: %d\n", id);
+		// printf("    id: %d\n", id);
 		if (!m_currPositionsX.contains(id))
 		{
 			robotDespawned = true;
 		}
 	}
-	printf("robotDespawned %d\n", robotDespawned);
+	// printf("robotDespawned %d\n", robotDespawned);
 	// If not current robots have moved right AND no robots have despawned since
 	// the last check, then the robots are NOT moving right
 	if (!robotsMovingRightByThreshold && !robotDespawned)
 	{
 		robotsmovingright = false;
 	}
-	printf("robotsmovingright %d\n", robotsmovingright);
+	// printf("robotsmovingright %d\n", robotsmovingright);
 	// Update the positions
 	m_prevPositionsX = m_currPositionsX;
-	printf("--end-----\n");
+	// printf("--end-----\n");
 
 	return robotsmovingright;
 }
@@ -233,6 +233,7 @@ bool Demo::robotsMovingRight(){
 //Main demoLoop called in the main file: The demoLoop is structured in two cases: if the visualization is activated or not.
 // Both cases are then almost identical apart from the simulation part.
 void Demo::demoLoop(){
+  if (m_elapsedTime > 790) printf("Starting main loop\n");
 	if (m_config.simulation.visualization) {
 		printf("Visualization is on\n");
 	}
@@ -242,6 +243,7 @@ void Demo::demoLoop(){
 
 	// While the simulation is running
 	while (state != SimulationState::End) {
+		if (m_elapsedTime > 790) printf("Simulation has not ended\n");
 		// Run non-case specific code
 		// printf("does anything here get run at allll???");
 
@@ -327,6 +329,7 @@ void Demo::demoLoop(){
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
+				printf("Finished removing robot\n");
 
 				if ( m_config.simulation.visualization ) {
 					window.clear(sf::Color::White);
@@ -335,9 +338,12 @@ void Demo::demoLoop(){
 					window.display();
 				}
 
+				if (m_elapsedTime > 790) printf("About to write bridge file\n");
 				writeBridgeFile();
+				if (m_elapsedTime > 790) printf("successfully wrote bridge file\n");
 
 				m_robotController.isBridgeDissolved();
+				if (m_elapsedTime > 790) printf("Checked if bridge is dissolved\n");
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
@@ -347,6 +353,7 @@ void Demo::demoLoop(){
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
 
+				if (m_elapsedTime > 790) printf("Updated timers\n");
 				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
 				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
 					m_tooLongDissolution;
@@ -354,9 +361,10 @@ void Demo::demoLoop(){
 
 				break;
 		}
+		if (m_elapsedTime > 790) printf("Got out of cases\n");
 		// Run this code regardless of case
 		// End the simulation if no robot has moved right by a body length in 60 seconds
-		//     and no robot has despawned
+		//     and no robot has despawnedAbout to write bridge file
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
 		if (m_elapsedTime >= m_timexPosCheck + 10.0){
 			// Update the value for whether robots are stuck
@@ -557,7 +565,7 @@ bool Demo::addRobotWithDistance(){
 	if(m_nbRobots == 0){
 		int delay = int(m_config.controller.walk_delay*FPS);
 		m_robotController.createRobot(m_world, delay, m_config.simulation.robot_initial_posX, m_config.simulation.robot_initial_posY);
-		std::cout << "first robot created"<<std::endl;
+		// std::cout << "first robot created"<<std::endl;
 		m_nbRobots++;
 		return true;
 	}

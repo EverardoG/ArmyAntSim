@@ -281,10 +281,17 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
     k_to_plot_ind = {}
     for plot_ind_k, k in enumerate(sorted_ks):
         k_to_plot_ind[k] = plot_ind_k
+    # Look at good ks for a specific offset
+    check_offset = "0.29"
+    print(f"Good ks for offset of {check_offset}")
+    print(good_ks_dict[check_offset])
 
     # PP.pprint(k_to_ind)
 
     for ind_offset, offset in enumerate(np.flip(sorted_offsets)):
+        if offset == "0.29":
+            print("Checkin in for loop")
+            print(good_ks_dict["0.29"])
         for ind_k, k in enumerate(good_ks_dict[offset]): # This is NOT the TRUE index of k -> This is only the index of the k in this subsampled list, which does not include ALL ks. That means that the index is going to be wrong for higher k values a lot of the time.
             plot_ind_k = k_to_plot_ind[str(k)]
             # print(f"(offset, k) : {(offset,k)} | (ind_offset, ind_k, plot_ind_k) : {ind_offset, ind_k, plot_ind_k}")
@@ -303,6 +310,9 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
             else:
                 case_val = 2
             success_grid[ind_offset,plot_ind_k] = case_val
+            if k == 4.44 and offset == "0.29":
+                print(f"case_val for this check is: {case_val}")
+                print(success_grid)
             # if float(offset) == 5.6 and float(k) == 20.0:
             #     print(f"Highest K, Highest Offset | {case_val}")
             #     success_grid[ind_offset,plot_ind_k] = case_val
@@ -317,6 +327,7 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
             #     success_grid[ind_offset,plot_ind_k] = case_val
             # print(success_grid)
 
+    print(success_grid)
     # Plot the results
 
     # Set up color map for the grid
@@ -331,6 +342,10 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
     colors = [cmap_start(color_index) for color_index in color_indicies]
     custom_cmap = ListedColormap(colors)
 
+    # Have to handle cases where only 2 colors are actually represented
+    # For now, only going to program in cases that I come accross
+    cmap_23 = ListedColormap(colors[1:])
+
     if mid_k is None:
         # Left is the colormap itself and on the right is a colorbar/label
         fig, axs = plt.subplots(1, 2, sharey=False, gridspec_kw={'width_ratios': [1,0.1]}, figsize=(24, 13))
@@ -344,8 +359,11 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
         mid_k_ind = sorted_ks.index(mid_k)
         success_grid_low_ks = success_grid[:, :mid_k_ind+1]
         success_grid_high_ks = success_grid[:, mid_k_ind+1:]
+        custom_cmap_highks = custom_cmap
+        if 1 not in success_grid_high_ks:
+            custom_cmap_highks = cmap_23
         ax_grid_low_ks.imshow(success_grid_low_ks, cmap = custom_cmap)
-        ax_grid_high_ks.imshow(success_grid_high_ks, cmap = custom_cmap)
+        ax_grid_high_ks.imshow(success_grid_high_ks, cmap = custom_cmap_highks)
 
         # Set up ticks for left and right
         offset_tick_positions = np.arange(len(sorted_offsets))
@@ -396,6 +414,39 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
         plt.show()
     return fig, axs
 
+def plot_num_robots_bridge_and_dissolution(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None):
+    offset_to_initial_num, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("num_robots_bridge_initial", metrics_dict, ks, offsets)
+    offset_to_final_num, _, _, _ = get_results_for_metric("num_robots_bridge_final", metrics_dict, ks, offsets)
+    # offset_to_percent_dissolution, _, _, _ = get_results_for_metric("percent_dissolution", metrics_dict, ks, offsets)
+
+    # Plot all of the ks and offsets with successful bridge formation
+    cmap = cm.get_cmap('viridis')
+    color_indicies = np.linspace(0.25, 0.75, len(offsets))
+    colors = [cmap(color_index) for color_index in color_indicies]
+    # print(sorted_offsets)
+    fig, ax_formation = plt.subplots(1,1, sharey=False, figsize=(24, 13))
+    for offset, color in zip(sorted_offsets, colors):
+        ax_formation.plot(good_ks_dict[offset], offset_to_initial_num[offset],'o', color = color, markersize=1.5)
+        # ax_dissolution.plot(good_ks_dict[offset], offset_to_percent_dissolution[offset], ':o',color = color, markersize=1.5)
+    # plt.title("Results for "+metric_name)
+    ax_formation.legend(["Offset: "+ str(float(offset)/1.02) for offset in sorted_offsets])
+    for offset, color in zip(sorted_offsets, colors):
+        # Filter out any 0.0s
+        offset_to_final_num_list = []
+        corresponding_final_ks = []
+        for result, k in zip(offset_to_final_num[offset], good_ks_dict[offset]):
+            # print(result, k, type(result), type(k))
+            if int(result) > 0:
+                # print("")
+                offset_to_final_num_list.append(result)
+                corresponding_final_ks.append(k)
+        ax_formation.plot(corresponding_final_ks, offset_to_final_num_list,'x', color = color, markersize=3)
+    ax_formation.set_xlabel("K")
+    ax_formation.set_ylabel("Number of Robots in Bridge State")
+    if save_dir is not None:
+        fig.savefig(save_dir+metric_name+".png")
+    if show:
+        plt.show()
 
 def plot_metric(metric_name:str, metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None):
     offset_to_metric, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric(metric_name, metrics_dict, ks, offsets)
@@ -497,5 +548,7 @@ elif args.metric is None or args.metric == "cob-com-delta" or args.metric == "co
     plot_cob_com_comparison_with_delta(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
 elif args.metric is None or args.metric == "formation-grid":
     plot_formation_dissolution_grid(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = "2.5")
+elif args.metric is None or args.metric == "num-robots-formation":
+    plot_num_robots_bridge_and_dissolution(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
 else:
     plot_metric(args.metric, metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)

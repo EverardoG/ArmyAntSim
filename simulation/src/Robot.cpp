@@ -28,10 +28,10 @@ Robot::Robot(b2World* world, config::sRobot robotParameters, double posX, double
 
 }
 Robot::~Robot() {
-	printf(" destructor called \n");
+	// printf(" destructor called \n");
 	// TODO Auto-generated destructor stub
 
-	std::cout << "destruction of robot id: " << m_id << std::endl;
+	// std::cout << "destruction of robot id: " << m_id << std::endl;
 	m_id=-1;
 
 //	if(m_robotBody){
@@ -1398,4 +1398,3 @@ void Robot::destroyBody(){
 	m_rightWheel->GetWorld()->DestroyBody( m_rightWheel );
 	m_robotBody->GetWorld()->DestroyBody( m_robotBody );
 }
-

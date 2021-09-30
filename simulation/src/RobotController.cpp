@@ -90,7 +90,7 @@ bool RobotController::createRobot(b2World* world, int delay, double posX, double
 		m_robotVector[m_robotVector.size()-1]->setId(m_nbRobots);
 		m_robotVector[m_robotVector.size()-1]->setDelay(delay);
 		m_robotVector[m_robotVector.size()-1]->m_age = m_currentIt;
-		printf("Robot created \n");
+		// printf("Robot created \n");
 		return true;
 	}
 }
@@ -355,13 +355,13 @@ void RobotController::addRobot(Robot* robot){
 
 void RobotController::removeRobot(){
 	if(!m_robotToDestroy.empty()){
-		printf("remove 0 \n");
+		// printf("remove 0 \n");
 
 		for (int i=0; i<m_robotToDestroy.size(); i++){
-			printf("m_robotToDestroy.size(): %ld\n", m_robotToDestroy.size());
-			printf("Grabbing id for i: %d\n", i);
+			// printf("m_robotToDestroy.size(): %ld\n", m_robotToDestroy.size());
+			// printf("Grabbing id for i: %d\n", i);
 			int id = m_robotToDestroy[i];
-			printf("id is %d\n", id);
+			// printf("id is %d\n", id);
 			std::vector<Robot*>::iterator pRob =  m_robotVector.begin()+id;
 
 			printf("Setup pRob\n");
@@ -392,7 +392,7 @@ void RobotController::robotOut(double end_x, int id){
 	int pos = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
 	// std::cout << "pos: " << pos << " | end_x: " << end_x << std::endl;
 	if(pos > end_x){
-		std::cout << "Planning to delete Robot " << id << std::endl;
+		// std::cout << "Planning to delete Robot " << id << std::endl;
 		m_robotToDestroy.push_back(id);
 //		removeRobot(id);
 	}

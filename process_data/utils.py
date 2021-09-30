@@ -321,6 +321,19 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                     m_simulationStuck = splitline[-1][0]
                 elif splitline[-2] == "m_tooLongDissolution:":
                     m_tooLongDissolution = splitline[-1][0]
+                # Grab the number of robots in bridge state at different times
+                elif len(splitline) >= 4 and splitline[-4] == "bridge" and splitline[-3] == "state":
+                    # print("FOUND BRIDGE STATE")
+                    if splitline[-2] == "initial:":
+                        num_robots_bridge_initial = int(splitline[-1])
+                    elif splitline[-2] == "final:":
+                        num_robots_bridge_final = int(splitline[-1])
+                elif splitline[-1][:4] == "end:":
+                    num_robots_bridge_end = int(splitline[-1][4:-1])
+    if num_robots_bridge_final > 0:
+        percent_dissolution = 100*(num_robots_bridge_final-num_robots_bridge_end)/num_robots_bridge_final
+    else:
+        percent_dissolution = None
     num_robots_travelled = 9 # 10 robots total, and travel state is triggered when 1st robot passes goal
     average_travel_time = travel_time/num_robots_travelled
     # if dissolution_time < 0.0:
@@ -333,7 +346,11 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
         "m_stacking": m_stacking,
         "m_towering": m_towering,
         "m_simulationStuck": m_simulationStuck,
-        "m_tooLongDissolution": m_tooLongDissolution
+        "m_tooLongDissolution": m_tooLongDissolution,
+        "num_robots_bridge_initial": num_robots_bridge_initial,
+        "num_robots_bridge_final": num_robots_bridge_final,
+        "num_robots_bridge_end": num_robots_bridge_end,
+        "percent_dissolution": percent_dissolution
         }
     return metrics
 
