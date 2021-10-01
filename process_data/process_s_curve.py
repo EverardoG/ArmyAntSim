@@ -494,49 +494,42 @@ def plot_num_robots_bridge(metrics_dict: Dict, ks: List, offsets: List, show: bo
     cmap = cm.get_cmap(cmap_name)
     color_indicies = np.linspace(1, 0, len(offsets))
     colors = [cmap(color_index) for color_index in color_indicies]
+
+    # initial_color_name = 'Reds'
+    # cmap_initial = cm.get_cmap(initial_color_name)
+    color_initial = (0,102/255,204/255) # Blue
+    color_final = (255/255,128/255,0) # Orange
     # print(sorted_offsets)
-    fig, (ax_formation, ax_colorbar) = plt.subplots(1,2, sharey=False, figsize=(24, 13), gridspec_kw={'width_ratios': [1,0.1]})
-    initial_robots_lines = []
-    for offset, color in zip(sorted_offsets, colors):
-        line_obj, = ax_formation.plot(good_ks_dict_initial[offset], offset_to_initial_num[offset],'o', color = color, markersize=6)
-        line_obj.set_label('Label via method')
-        initial_robots_lines.append(line_obj)
-        # ax_dissolution.plot(good_ks_dict[offset], offset_to_percent_dissolution[offset], ':o',color = color, markersize=1.5)
-    # plt.title("Results for "+metric_name)
-    # offset_legend_f = ["{:.2f}".format(float(offset)/1.02) for offset in sorted_offsets]
-    # ax_formation.legend(offset_legend_f)
-    final_robots_lines = []
-    for offset, color in zip(sorted_offsets, colors):
-        # Filter out any 0.0s
-        offset_to_final_num_list = []
-        corresponding_final_ks = []
-        for result, k in zip(offset_to_final_num[offset], good_ks_dict_final[offset]):
-            # print(result, k, type(result), type(k))
-            if int(result) > 0:
-                # print("")
-                offset_to_final_num_list.append(result)
-                corresponding_final_ks.append(k)
-        line_obj, = ax_formation.plot(corresponding_final_ks, offset_to_final_num_list,'x', color = color, markersize=8)
-        line_obj.set_label('Label via method')
-        final_robots_lines.append(line_obj)
-    offset_legend = ["Initial Bridge", "Final Bridge"]
-    ax_formation.legend([initial_robots_lines[-1], final_robots_lines[-1]],offset_legend)
+    fig, ax_formation = plt.subplots(1,1, sharey=False, figsize=(24, 13))
+    def grab_results(metrics_dict, sorted_ks, sorted_offsets, metric_name, operator)->List[float]:
+        results = []
+        for k in sorted_ks:
+            results_for_k = []
+            for offset in sorted_offsets:
+                if (k, offset) in list(metrics_dict.keys()):
+                    if metric_name != "num_robots_bridge_final" or metrics_dict[(k, offset)][metric_name] > 0:
+                        result = metrics_dict[(k, offset)][metric_name]
+                        results_for_k.append(result)
+            results.append(operator(results_for_k))
+        return results
+
+    results_initial_min = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_initial", np.min)
+    results_initial_max = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_initial", np.max)
+    results_initial_avg = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_initial", np.average)
+    results_final_min = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_final", np.min)
+    results_final_max = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_final", np.max)
+    results_final_avg = grab_results(metrics_dict, sorted_ks, sorted_offsets, "num_robots_bridge_final", np.average)
+
+    avg_line_initial, = ax_formation.plot(sorted_ks, results_initial_avg, 'o:', color=color_initial)
+    fill_line_initial = ax_formation.fill_between(sorted_ks, results_initial_min, results_initial_max, facecolor=color_initial, color=color_initial, alpha=0.2)
+    avg_line_final, = ax_formation.plot(sorted_ks, results_final_avg, 'o:', color=color_final)
+    fill_line_final = ax_formation.fill_between(sorted_ks, results_final_min, results_final_max, facecolor=color_final, color=color_final, alpha=0.2)
+
+    ax_formation.legend([fill_line_initial, fill_line_final, avg_line_initial, avg_line_final], ["Initial Range", "Final Range", "Initial Average", "Final Average"])
     ax_formation.set_xlabel("k")
     ax_formation.set_ylabel("Number of Robots in Bridge State")
+    ax_formation.set_ylim([0.0, np.max([np.max(results_initial_max), np.max(results_final_max)])+10])
     fig.suptitle("Number of Robots in Initial and Final Bridge")
-
-    # Setup colorbar
-
-    # Remove ticks
-    ax_colorbar.set_xticks([])
-    ax_colorbar.yaxis.tick_right()
-    ax_colorbar.set_yticks([0,19])
-    ax_colorbar.set_yticklabels([str(offset) for offset in [sorted_offsets[-1], sorted_offsets[0]] ], minor=False)
-
-    # set up the color bars as images
-    colors_np = np.flip(np.expand_dims(np.array(colors), axis=1), axis=0)
-    ax_colorbar.imshow(colors_np)
-    ax_colorbar.set_title("Offset")
 
     if save_dir is not None:
         fig.savefig(save_dir+metric_name+".png")
