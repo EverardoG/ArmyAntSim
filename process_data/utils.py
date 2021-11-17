@@ -405,7 +405,7 @@ def visualize_initial_bridge(results_folder: Path)->None:
     plt.show()
 
 if __name__ == "__main__":
-    folder_path = Path("/home/egonzalez/ArmyAntSim/temp/results_success2")
+    folder_path = Path("/home/egonzalez/data/redo_island_2/sweep_k_0.1_to_20_robot_speed_0_to_5.60/k_1.98_offset_3.83")
     visualize_initial_bridge(folder_path)
     metrics_dict = get_metrics_from_folder(folder_path)
     desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "lever_ratio_width", "lever_ratio_height"]

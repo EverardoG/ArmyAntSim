@@ -42,7 +42,7 @@ command_list = []
 for k in k_vector:
     for offset in offset_vector:
         command = "/home/egonzalez/ArmyAntSim/build/ArmyAntSim"
-        command += " -y island"
+        command += " -y flat"
         command += " --dynamic_speed 1"
         command += " --use_delay 0"
         command += " --smart_dissolution 1"
@@ -58,5 +58,5 @@ for k in k_vector:
         command_list.append(command)
 
 # Execute the commands to run the sweep
-# for command in command_list:
-#     system(command)
+for command in command_list:
+    system(command)
