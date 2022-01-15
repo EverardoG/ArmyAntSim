@@ -1,6 +1,7 @@
 import argparse
 import os
 from typing import Dict, List, Optional
+import matplotlib
 
 from numpy.core.fromnumeric import sort
 from utils import get_metrics_from_folder, METRICS
@@ -304,13 +305,17 @@ def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = T
     ax_height.set_ylabel("Height "+units)
     ax_height.set_ylim([0,ceil(max_height)+1])
 
-    for ax in [ax_width, ax_height]:
-        ax.set_xlabel("k")
-        ax.set_xticks([float(k) for k in sorted_ks])
-        xtick_labels = copy(sorted_ks)
-        for i in range(13): xtick_labels[i+1] = ''
-        for i in range(4): xtick_labels[2*i+16] = ''
-        ax.set_xticklabels(xtick_labels)
+    try:
+        for ax in [ax_width, ax_height]:
+            ax.set_xlabel("k")
+            ax.set_xticks([float(k) for k in sorted_ks])
+            xtick_labels = copy(sorted_ks)
+            for i in range(13): xtick_labels[i+1] = ''
+            for i in range(4): xtick_labels[2*i+16] = ''
+            ax.set_xticklabels(xtick_labels)
+    except:
+        print("Warning: Encountered error labelling axes")
+        pass
 
     # Set up rightmost axes as colorbars
     # Remove ticks
@@ -340,6 +345,102 @@ def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = T
         plt.show()
     return fig, (ax_width, ax_height, ax_colorbar)
 
+def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None, normalize_to_bl = True):
+    # Update matplotlib font
+    tick_font_size = 18
+    plt.rc('xtick', labelsize=tick_font_size)
+    plt.rc('ytick', labelsize=tick_font_size)
+    axes_font_size = 22
+    plt.rc('axes', labelsize=axes_font_size)
+    
+    # Collect results that we need
+    offset_to_width, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("box_width", metrics_dict, ks, offsets)
+    offset_to_com, _, _, _ = get_results_for_metric("com", metrics_dict, ks, offsets)
+
+    # Create the three subplots - Width, X COM, color bar
+    fig, (ax_width, ax_com_x, ax_colorbar) = plt.subplots(1, 3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(12, 8),dpi=100)
+    cmap_name = "Blues"
+    cmap = cm.get_cmap(cmap_name)
+    color_indicies = np.linspace(0.5,1,len(offsets))
+    colors = [cmap(color_index) for color_index in color_indicies]
+
+    # Plot the widths and the com xs 
+    linestyle = "."
+    markersize = 20
+    max_width = 0
+    max_com_x = 0
+    for offset, color_point in zip(sorted_offsets, colors):
+        # Prepare data
+        width_arr = np.array(offset_to_width[offset])
+        if normalize_to_bl: width_arr/=1.02
+        if np.max(width_arr > max_width): np.max(width_arr)
+        com_xs_arr = np.array([com[0] for com in offset_to_com[offset]])
+        if normalize_to_bl: com_xs_arr/=1.02
+        if np.max(com_xs_arr) > max_com_x: max_com_x = np.max(com_xs_arr)
+        # Plot data
+        ax_width.plot(good_ks_dict[offset], width_arr, linestyle, markersize=markersize, color=color_point)
+        ax_com_x.plot(good_ks_dict[offset], com_xs_arr, linestyle, markersize=markersize, color=color_point)
+
+    # Set up the subplot axes text
+    if normalize_to_bl: units = "(BL)"
+    else: units = "(m)"
+    ax_width.set_ylabel("Width "+units)
+    ax_width.set_xlabel("k")
+    ax_com_x.set_ylabel("COM X Component "+units)
+    ax_com_x.set_xlabel("k")
+
+    # Setup xticks for ks
+    for ax in [ax_width, ax_com_x]:
+        ax.set_xticks([float(k) for k in sorted_ks])
+        xtick_labels = []
+        for count, k_str in enumerate(sorted_ks):
+            if count % 3 == 0:
+                xtick_labels.append(k_str)
+            else:
+                xtick_labels.append("")
+        ax.set_xticklabels(xtick_labels)
+    
+    # Setup grids
+    for ax in [ax_width, ax_com_x]:
+        ax.set_facecolor((0.88,0.88,0.88))
+        ax.grid(color=(0.95,0.95,0.95), linewidth=2)
+
+    # Make borders and ticks white
+    for ax in [ax_width, ax_com_x, ax_colorbar]:
+        ax.tick_params(color="white")
+        for spine in ax.spines.values():
+            spine.set_edgecolor("white")
+
+    # Setup colorbar colors
+    colors_np = np.flip(np.expand_dims(np.array(colors), axis=1), axis=0)
+    ax_colorbar.imshow(colors_np)
+
+    # Setup colorbar label
+    ax_colorbar.set_xlabel("σ "+units)
+
+    # Setup colorbar ticks
+    ax_colorbar.set_xticks([])
+    offset_ticks = np.arange(len(sorted_offsets))
+    ax_colorbar.set_yticks(offset_ticks)
+    ax_colorbar.set_aspect('auto')
+    offset_label = copy(sorted_offsets)
+    if normalize_to_bl: 
+        offset_label = ['%.2f' % (float(offset)/1.02) for offset in offset_label]
+    offset_label.reverse()
+    ax_colorbar.set_yticklabels(offset_label)
+
+    # Tighten up the layout
+    fig.tight_layout()
+    fig.subplots_adjust(right=0.97)
+    # subplots_adjust makes it so that there is enough space for "σ (BL)" under colorbar
+
+    # Save plot
+    if save_dir is not None:
+        fig.savefig(save_dir+'x-char.png', bbox_inches='tight')
+        # bbox_inches='tight' makes it so that σ BL is not cutoff (not sure how)
+    if show:
+        plt.show()
+    return fig, (ax_width, ax_com_x, ax_colorbar)
 
 def plot_cob_delta(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None, normalize_to_bl = True, state = "initial"):
     offset_to_com, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("com", metrics_dict, ks, offsets)
@@ -522,14 +623,17 @@ def plot_com(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, sav
     ax_ys.set_ylabel("Position"+units)
     # ax_ys.set_ylim([0,ceil(max_height)+1])
 
-    for ax in [ax_xs, ax_ys]:
-        ax.set_xlabel("k")
-        ax.set_xticks([float(k) for k in sorted_ks])
-        xtick_labels = copy(sorted_ks)
-        for i in range(13): xtick_labels[i+1] = ''
-        for i in range(4): xtick_labels[2*i+16] = ''
-        ax.set_xticklabels(xtick_labels)
-
+    try:
+        for ax in [ax_xs, ax_ys]:
+            ax.set_xlabel("k")
+            ax.set_xticks([float(k) for k in sorted_ks])
+            xtick_labels = copy(sorted_ks)
+            for i in range(13): xtick_labels[i+1] = ''
+            for i in range(4): xtick_labels[2*i+16] = ''
+            ax.set_xticklabels(xtick_labels)
+    except:
+        print("Warning: Encountered error labelling axes")
+        pass
     # Set up rightmost axes as colorbars
     # Remove ticks
     # for ax, colors in zip([ax_color_com, ax_color_cob], [colors_com, colors_cob]):
@@ -1005,21 +1109,23 @@ PP.pprint(toolong_list)
 if args.metric is None:
     for metric_name in METRICS:
         plot_metric(metric_name, metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "cob-com" or args.metric == "com-cob":
+if args.metric is None or args.metric == "cob-com" or args.metric == "com-cob":
     plot_cob_com_comparison(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "com":
+if args.metric is None or args.metric == "com":
     plot_com(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "cob-delta":
+if args.metric is None or args.metric == "cob-delta":
     plot_cob_delta(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "cob-com-delta" or args.metric == "com-cob-delta":
+if args.metric is None or args.metric == "cob-com-delta" or args.metric == "com-cob-delta":
     plot_cob_com_comparison_with_delta(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "formation-grid":
+if args.metric is None or args.metric == "formation-grid":
     plot_formation_dissolution_grid(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = "2.5")
-elif args.metric is None or args.metric == "num-robots":
+if args.metric is None or args.metric == "num-robots":
     plot_num_robots_bridge(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-elif args.metric is None or args.metric == "percent-dissolution":
+if args.metric is None or args.metric == "percent-dissolution":
     plot_percent_dissolution(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = "2.5")
-elif args.metric is None or args.metric == "bridge-size-initial":
+if args.metric is None or args.metric == "bridge-size-initial":
     plot_bridge_size(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, state = "initial")
+if args.metric is None or args.metric == "x-char":
+    plot_x_characteristics(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, normalize_to_bl = True)
 else:
     plot_metric(args.metric, metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
