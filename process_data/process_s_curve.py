@@ -2,6 +2,8 @@ import argparse
 import os
 from typing import Dict, List, Optional
 import matplotlib
+matplotlib.rcParams['mathtext.fontset'] ='stix'
+matplotlib.rcParams['font.family'] = 'STIXGeneral'
 
 from numpy.core.fromnumeric import sort
 from utils import get_metrics_from_folder, METRICS
@@ -346,13 +348,13 @@ def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = T
     return fig, (ax_width, ax_height, ax_colorbar)
 
 def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None, normalize_to_bl = True):
-    # Update matplotlib font
+    # Set correct matplotlib font
     tick_font_size = 18
     plt.rc('xtick', labelsize=tick_font_size)
     plt.rc('ytick', labelsize=tick_font_size)
-    axes_font_size = 22
+    axes_font_size = 23
     plt.rc('axes', labelsize=axes_font_size)
-    
+
     # Collect results that we need
     offset_to_width, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("box_width", metrics_dict, ks, offsets)
     offset_to_com, _, _, _ = get_results_for_metric("com", metrics_dict, ks, offsets)
@@ -364,7 +366,7 @@ def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bo
     color_indicies = np.linspace(0.5,1,len(offsets))
     colors = [cmap(color_index) for color_index in color_indicies]
 
-    # Plot the widths and the com xs 
+    # Plot the widths and the com xs
     linestyle = "."
     markersize = 20
     max_width = 0
@@ -385,9 +387,9 @@ def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bo
     if normalize_to_bl: units = "(BL)"
     else: units = "(m)"
     ax_width.set_ylabel("Width "+units)
-    ax_width.set_xlabel("k")
-    ax_com_x.set_ylabel("COM X Component "+units)
-    ax_com_x.set_xlabel("k")
+    ax_width.set_xlabel(r'$k$'+" (gain)")
+    ax_com_x.set_ylabel(r'COM $x$ Position '+units)
+    ax_com_x.set_xlabel(r'$k$'+" (gain)")
 
     # Setup xticks for ks
     for ax in [ax_width, ax_com_x]:
@@ -399,11 +401,13 @@ def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bo
             else:
                 xtick_labels.append("")
         ax.set_xticklabels(xtick_labels)
-    
+
     # Setup grids
     for ax in [ax_width, ax_com_x]:
-        ax.set_facecolor((0.88,0.88,0.88))
-        ax.grid(color=(0.95,0.95,0.95), linewidth=2)
+        fc = 0.91
+        ax.set_facecolor((fc,fc,fc))
+        gc = 0.98
+        ax.grid(color=(gc,gc,gc), linewidth=2)
 
     # Make borders and ticks white
     for ax in [ax_width, ax_com_x, ax_colorbar]:
@@ -416,7 +420,7 @@ def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bo
     ax_colorbar.imshow(colors_np)
 
     # Setup colorbar label
-    ax_colorbar.set_xlabel("σ "+units)
+    ax_colorbar.set_xlabel(r'$\sigma$ '+units+"\n(offset)")
 
     # Setup colorbar ticks
     ax_colorbar.set_xticks([])
@@ -424,7 +428,7 @@ def plot_x_characteristics(metrics_dict: Dict, ks: List, offsets: List, show: bo
     ax_colorbar.set_yticks(offset_ticks)
     ax_colorbar.set_aspect('auto')
     offset_label = copy(sorted_offsets)
-    if normalize_to_bl: 
+    if normalize_to_bl:
         offset_label = ['%.2f' % (float(offset)/1.02) for offset in offset_label]
     offset_label.reverse()
     ax_colorbar.set_yticklabels(offset_label)
@@ -477,7 +481,7 @@ def plot_cob_delta(metrics_dict: Dict, ks: List, offsets: List, show: bool = Tru
     max_height = 0
     for offset, color_cob in zip(sorted_offsets, colors):
         # Compute the deltas
-        
+
         # Turn cob results into numpy array
         cob_arr = np.array(offset_to_cob[offset])
         correct_y(cob_arr, normalize_to_bl)

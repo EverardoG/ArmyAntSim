@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 # Turn on debugging symbols
 set(CMAKE_BUILD_TYPE Debug)
 
-# Use C++17
+# Use C++20
 set(CMAKE_CXX_STANDARD 20)
 
 # project name

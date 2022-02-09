@@ -329,7 +329,7 @@ void Demo::demoLoop(){
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
-				printf("Finished removing robot\n");
+				// printf("Finished removing robot\n");
 
 				if ( m_config.simulation.visualization ) {
 					window.clear(sf::Color::White);
