@@ -262,7 +262,7 @@ void Demo::demoLoop(){
 			//	}
 				// Update the robot speeds dynamically if relevant
 				if (m_config.robot.dynamic_speed) {
-					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal());
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), m_elapsedTime);
 				}
 
 				// Check if any robot has gotten up beyond the window

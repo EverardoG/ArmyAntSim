@@ -34,7 +34,7 @@ public:
 	 * @return true if the robot is grabbed, false otherwise
 	 */
 	bool checkGrabbed(Robot& robot);
-	
+
 	bool checkTowering();
 
 	void create(config::sController controllerParam, config::sRobot robotParam, b2Body* terrain, b2Vec2 posGoal, double m_to_px = 0);
@@ -245,7 +245,7 @@ public:
 	/**
 	 *
 	*/
-	void calculateSpeedsToGoal(b2Vec2 m_goal_pos);
+	void calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime);
 
 	b2Vec2 getAvgPos();
 

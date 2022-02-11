@@ -275,6 +275,9 @@ public:
 	 * */
 	double getAngle();
 
+
+	double getSpeed() {return m_angularSpeed;};
+
 	side m_movingSide = RIGHT; //Side of the foot that is moving (active motor joint)
 	bool m_ready = false; //Flag to indicate when the robot is ready to move
 	bool m_moving = false; //Flag to indicate that the robot is moving (active motor)
@@ -288,6 +291,10 @@ public:
 	int m_bridgeAge = 0; //Age of the stable bridge in number of iterations
 	int m_age = 0; //Age of the robot in the bridge state. should be reseted when the robot leave the bridge state
 	int m_pushing_delay = 0; //Pushing delay before which the robot is not able to grip if it didn't run through the limit angle (in number of iterations)
+	bool m_first_iteration = true; // Boolean to know if this is the fist time udpating robot's last position
+	b2Vec2 m_last_position = b2Vec2(0.0,0.0);
+	float m_pos_update_time = 1; // Update the last position every __ seconds
+	float m_last_position_time_update = 0; // Last time that last_position was updated
 
 	/**
 	 * Pointers on the two possible gripping joints

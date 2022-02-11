@@ -63,7 +63,7 @@ void IslandTerrain::createBody(b2World* world){
 //	// float islandRight = islandLeft + 4 * m_bodyLength;
 //	float islandRight = m_windowSize.x*m_M_TO_PX;
 //
-	m_posGoal = b2Vec2(islandLeft, islandBottom);
+	m_posGoal = b2Vec2(islandLeft, islandTop);
 //	// std::cout << "IslandTerrain::createBody() " << m_posGoal.x << std::endl;
 //
 	Point islandLeftTopPoint = b2Vec2(islandLeft, islandTop);
