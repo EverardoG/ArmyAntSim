@@ -528,7 +528,38 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 			}
 			m_robotVector[i]->setSpeed(new_speed);
 		}
-
+	}
+	else if (m_controllerParam.control_policy == "dynamic_reactivebuild_no_comms") {
+		for (int i=0; i<m_robotVector.size(); i++) {
+			// start w. robot's current speed
+			float new_speed = m_robotVector[i]->getSpeed();
+			// If the robot already reached the goal, then move at the constant speed
+			if(m_robotVector[i]->getPosition().y < m_goal_pos.y && m_robotVector[i]->getPosition().x > m_goal_pos.x){
+				new_speed = m_robotParam.speed;
+			}
+			// Otherwise, calculate the robot speed
+			else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) > m_robotVector[i]->m_pos_update_time && new_speed != 0) {
+				b2Vec2 prev_vector = m_robotVector[i]->m_last_position - m_goal_pos;
+				float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
+				b2Vec2 curr_vector = m_robotVector[i]->getPosition() - m_goal_pos;
+				float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
+				// If robot is moving closer to goal...
+				if (curr_distance < prev_distance) {
+					// new_speed = m_controllerParam.param1 * (prev_distance - curr_distance);
+					new_speed = m_robotParam.speed/(1+pow(2.72, -m_controllerParam.param1*(prev_distance - curr_distance)));
+					if (m_robotVector[i]->getId() == 1) {
+						std::cout << "x: " << (prev_distance-curr_distance) << " | y: " << new_speed << std::endl;
+					}
+				}
+				else {
+					new_speed = 0.0;
+				}
+				// Update last position
+				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+			}
+			m_robotVector[i]->setSpeed(new_speed);
+		}
 	}
 }
 
