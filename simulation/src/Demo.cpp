@@ -79,6 +79,9 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "island") {
 		m_terrain = new IslandTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
+	else if (m_config.terrain.type == "pit") {
+		m_terrain = new PitTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
+	}
 	else if (m_config.terrain.type == "flat") {
 		m_terrain = new FlatTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}
@@ -368,11 +371,11 @@ void Demo::demoLoop(){
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
 		if (m_elapsedTime >= m_timexPosCheck + 10.0){
 			// Update the value for whether robots are stuck
-			if (!robotsMovingRight())
-			{
-				std::cout << "Simulation is stuck" << std::endl;
-				m_simulationStuck = true;
-			}
+			// if (!robotsMovingRight())
+			// {
+			// 	std::cout << "Simulation is stuck" << std::endl;
+			// 	m_simulationStuck = true;
+			// }
 			m_timexPosCheck = m_elapsedTime;
 		}
 

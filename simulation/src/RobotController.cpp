@@ -49,6 +49,8 @@ void RobotController::create(config::sController controllerParam, config::sRobot
 	printf("size of vector %ld, \n", m_robotVector.size());
 	m_terrainBody = terrain;
 	m_posGoal = posGoal;
+	std::cout << "initial sigma: " << m_controllerParam.sigma << std::endl;
+	n_distribution = std::normal_distribution<float>(0.0, m_controllerParam.sigma);
 }
 
 RobotController::~RobotController() {
@@ -134,6 +136,7 @@ void RobotController::drawRobots(sf::RenderTexture& texture, double m_to_px){
 
 
 void RobotController::findContactRobots(b2Contact* contact){
+	std::cout << "findContactRobots()" << std::endl;
 	int i =0;
 	b2Body* bodyContactA = contact->GetFixtureA()->GetBody();
 	b2Body* bodyContactB = contact->GetFixtureB()->GetBody();
@@ -147,38 +150,49 @@ void RobotController::findContactRobots(b2Contact* contact){
 	bool contactorB = false;
 
 	if(!(bodyContactA == m_terrainBody)){
+		printf("!(bodyContactA == m_terrainBody)\n");
 		robotA = true;
 		rA=static_cast<Robot*>(bodyContactA->GetUserData());
 	}
 
 	if(!(bodyContactB == m_terrainBody)){
+		printf("!(bodyContactB == m_terrainBody)\n");
 		robotB = true;
 		rB=static_cast<Robot*>(bodyContactB->GetUserData());
 	}
 
 	if(robotA){
+		printf("robotA\n");
 		contactorA = (rA->isMoving()||rA->m_start)
 				   && (rA->contactOnGripSide(contact));//||m_robotVector[A].m_start);
 	}
 
 	if(robotB){
-		contactorB = (rB->isMoving()||rB->m_start)
-				   && (rB->contactOnGripSide(contact));//||m_robotVector[A].m_start);
+		printf("robotB\n");
+		bool moving = rB->isMoving();
+		bool start = rB->m_start;
+		bool cont = rB->contactOnGripSide(contact);
+		std::cout << "rB->isMoving(): " << moving << " | rB->m_start: " << start << " | rB->contactOnGripSide(contact): " << cont << std::endl;
+		contactorB = (moving||start)
+				    && (cont);
+		// contactorB = (rB->isMoving()||rB->m_start)
+		// 		    && (rB->contactOnGripSide(contact));//||m_robotVector[A].m_start);
 	}
 
 	if (robotA && robotB && (rA==rB)){
-		// printf("contact within robot\n");
+		printf("contact within robot\n");
 		return;
 	}
 
 	// start Finite-state machine
 	if (contactorA && contactorB){
+		std::cout << "A && B" << std::endl;
 
 		double angleA = rA->getBody()->GetAngle() - rA->m_referenceAngle;
 
 		double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
 
-		if(abs(angleA) > m_controllerParam.angle_limit && angleB > m_controllerParam.angle_limit){
+		if(abs(angleA) > m_controllerParam.angle_limit && abs(angleB) > m_controllerParam.angle_limit){
 			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 			rA->setContact(true);
 			rB->gripSide(contact, bodyContactA, m_M_TO_PX);
@@ -203,9 +217,10 @@ void RobotController::findContactRobots(b2Contact* contact){
 	}
 
 	else if (contactorB){
+		std::cout << "B" << std::endl;
 
-		double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
-		if(abs(angleB) > m_controllerParam.angle_limit){
+		// double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
+		// if(abs(angleB) > m_controllerParam.angle_limit){
 	//		if (m_robotVector[B].m_start){m_robotVector[B].m_start = false;}
 			rB->gripSide(contact, bodyContactA, m_M_TO_PX);
 			setRobotState(*rB, WALK);
@@ -213,10 +228,11 @@ void RobotController::findContactRobots(b2Contact* contact){
 			if (robotA){
 				setRobotState(*rA, BRIDGE);
 			}
-		}
+		// }
 	}
 
 	else if (contactorA){
+		std::cout << "A" << std::endl;
 
 		double angleA = rA->getBody()->GetAngle() - rA->m_referenceAngle;
 //		std::cout<<"angle robot: "<<moduloAngle(m_robotVector[A].getBody()->GetAngle())*RAD_TO_DEG<<std::endl;
@@ -231,6 +247,9 @@ void RobotController::findContactRobots(b2Contact* contact){
 				setRobotState(*rB, BRIDGE);
 			}
 		}
+	}
+	else {
+		std::cout << "No valid contacts" << std::endl;
 	}
 	//printf("end of contact\n");
 }
@@ -468,6 +487,17 @@ void RobotController::SetGlobalSpeed(double desired_speed){
 // also option for dynamic speed vs fixed speed in config
 // maybe change delay instead of speed (this is more portable for real robot)
 
+b2Vec2 RobotController::perturbGoal(b2Vec2 goal_pos) {
+	// Generate random number for radius of perturbation
+	float r = n_distribution(generator);
+	// Generate angle for perturbation
+	float theta = u_distribution(generator);
+	// std::cout << "r: " << r << " | theta: " << theta << std::endl;
+	// Create new goal position as perturbed goal position
+	b2Vec2 perturbed_goal = b2Vec2(goal_pos.x+r*cos(theta), goal_pos.y+r*sin(theta));
+	return perturbed_goal;
+}
+
 void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime){
 	if (m_controllerParam.control_policy == "s_curve") {
 		// Calculates the speed for every robot so that the robots move toward the desired goal
@@ -531,33 +561,53 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 	}
 	else if (m_controllerParam.control_policy == "dynamic_reactivebuild_no_comms") {
 		for (int i=0; i<m_robotVector.size(); i++) {
+			// Grab a perturbed goal
+			b2Vec2 measured_goal_pos = perturbGoal(m_goal_pos);
+			// Unless sigma is set to 0. Then reset this to the actual goal position.
+			if (m_controllerParam.sigma == 0.0) {
+				measured_goal_pos = m_goal_pos;
+			}
 			// start w. robot's current speed
 			float new_speed = m_robotVector[i]->getSpeed();
 			// If the robot already reached the goal, then move at the constant speed
-			if(m_robotVector[i]->getPosition().y < m_goal_pos.y && m_robotVector[i]->getPosition().x > m_goal_pos.x){
+			if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
 				new_speed = m_robotParam.speed;
 			}
 			// Otherwise, calculate the robot speed
 			else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) > m_robotVector[i]->m_pos_update_time && new_speed != 0) {
-				b2Vec2 prev_vector = m_robotVector[i]->m_last_position - m_goal_pos;
+				// std::cout << "r.x: " << m_robotVector[i]->getPosition().x << " | r.y: " << m_robotVector[i]->getPosition().y << std::endl;
+				b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
 				float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
-				b2Vec2 curr_vector = m_robotVector[i]->getPosition() - m_goal_pos;
+				b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
+				// std::cout << "d.x: " << curr_vector.x << " | d.y: " << curr_vector.y << std::endl;
 				float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
-				// If robot is moving closer to goal...
-				if (curr_distance < prev_distance) {
-					// new_speed = m_controllerParam.param1 * (prev_distance - curr_distance);
-					new_speed = m_robotParam.speed/(1+pow(2.72, -m_controllerParam.param1*(prev_distance - curr_distance)));
-					if (m_robotVector[i]->getId() == 1) {
-						std::cout << "x: " << (prev_distance-curr_distance) << " | y: " << new_speed << std::endl;
-					}
+				// std::cout << "prev: " << prev_distance << " | curr: " << curr_distance << std::endl;
+				// new_speed = m_controllerParam.param1 * (prev_distance - curr_distance);
+				float sign = 1;
+				if (new_speed < 0) { sign = -1; }
+				new_speed = sign * 1.5*m_robotParam.speed/(1+pow(2.72, -m_controllerParam.param1*(prev_distance - curr_distance))) - m_robotParam.speed/2;
+				if (m_robotVector[i]->getId() == 1) {
+					// std::cout << "x: " << (prev_distance-curr_distance) << " | y: " << new_speed << std::endl;
+					// std::cout << "prev: " << prev_distance << " | curr: " << curr_distance << std::endl;
+					// std::cout << "Update last position | m_elapsedTime: " << m_elapsedTime << std::endl;
+					// std::cout << "Goal x: " << measured_goal_pos.x << " | Goal y: " << measured_goal_pos.y << " | sigma: " << m_controllerParam.sigma << std::endl;
 				}
-				else {
-					new_speed = 0.0;
-				}
+				// // If robot is moving closer to goal...
+				// if (curr_distance < prev_distance) {
+				// 	// new_speed = m_controllerParam.param1 * (prev_distance - curr_distance);
+				// 	new_speed = m_robotParam.speed/(1+pow(2.72, -m_controllerParam.param1*(prev_distance - curr_distance)));
+				// 	if (m_robotVector[i]->getId() == 1) {
+				// 		std::cout << "x: " << (prev_distance-curr_distance) << " | y: " << new_speed << std::endl;
+				// 	}
+				// }
+				// else {
+				// 	new_speed = 0.0;
+				// }
 				// Update last position
 				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 			}
+			// std::cout << "s: " << new_speed << std::endl;
 			m_robotVector[i]->setSpeed(new_speed);
 		}
 	}
@@ -628,9 +678,9 @@ void RobotController::step(double end_x){
 ////			    m_robot[i].m_ready=false;
 //	    		invertMovingWheel(m_robotVector.at(i));
 	    		// printf("\n Robot moving for too long, it is pushing \n");
-	    		if(robotPushing(*m_robotVector[i])){
-	    			setRobotState(*m_robotVector[i],WALK);
-	    		}
+	    		// if(robotPushing(*m_robotVector[i])){
+	    		// 	setRobotState(*m_robotVector[i],WALK);
+	    		// }
 	    	}
 	    }
 //	    m_robot[i].drawJoint(window);
@@ -642,6 +692,7 @@ void RobotController::step(double end_x){
 }
 
 bool RobotController::robotPushing(Robot& r){
+	std::cout << "robotPushing()" << std::endl;
 
 	b2ContactEdge* contactList = r.getWheel(r.m_movingSide)->GetContactList();
 	b2Contact* contact = contactList->contact;

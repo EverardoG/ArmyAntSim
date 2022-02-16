@@ -876,7 +876,7 @@ void Robot::allowMotorRotation(side s){
 
 
 void Robot::grip(b2Contact* contact, b2Body* otherBody, double m_to_px){ //ou alors fonction retourne un joint ?
-
+	std::cout << "grip()" << std::endl;
 	b2WorldManifold worldManifold;
 	contact->GetWorldManifold(&worldManifold);
 	b2Body* bodyA = contact->GetFixtureA()->GetBody();
@@ -942,10 +942,10 @@ void Robot::grip(b2Contact* contact, b2Body* otherBody, double m_to_px){ //ou al
 
 }
 bool Robot::gripSide(b2Contact* contact, b2Body* otherBody, double m_to_px){ //ou alors fonction retourne un joint ?
-
-	if(!contactOnGripSide(contact)){
-		return false;
-	}
+	std::cout << "gripSide()" << std::endl;
+	// if(!contactOnGripSide(contact)){
+	// 	return false;
+	// }
 
 	b2WorldManifold worldManifold;
 	contact->GetWorldManifold(&worldManifold);
@@ -1184,20 +1184,21 @@ bool Robot::contactOnGripSide(b2Contact* contact){
 
 	if(bodyA==movingWheel || bodyB==movingWheel)
 	{
-//		return true;
-		double x0 = movingWheel->GetLocalPoint(worldManifold.points[0]).x;
-		double y0 = movingWheel->GetLocalPoint(worldManifold.points[0]).y;
-		double y = y0*cos(angle)- x0*sin(angle);
-		if(m_movingSide == RIGHT){
-			if(y>0){
-				return true;
-			}
-		}
-		else{
-			if(y<0){
-				return true;
-			}
-		}
+
+		return true;
+		// double x0 = movingWheel->GetLocalPoint(worldManifold.points[0]).x;
+		// double y0 = movingWheel->GetLocalPoint(worldManifold.points[0]).y;
+		// double y = y0*cos(angle)- x0*sin(angle);
+		// if(m_movingSide == RIGHT){
+		// 	if(y>0){
+		// 		return true;
+		// 	}
+		// }
+		// else{
+		// 	if(y<0){
+		// 		return true;
+		// 	}
+		// }
 	}
 
 	return false;

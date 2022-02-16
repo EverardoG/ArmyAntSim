@@ -69,6 +69,7 @@ struct sController{
 	float param3;
 	float param4;
 	float param5;
+	float sigma;
 	std::string control_policy;
 };
 

@@ -81,6 +81,7 @@ int main(int argc, char* argv[])
 	ValueArg<float> stable_time_arg("", "stability_condition", "Time after which a bridge is considered stable in s", false, 60, "SEC float 60");
 	ValueArg<float> gain_arg("", "kp", "Gain applied to dynamic speed", false, 0.4, "FLOAT float 0.4");
 	ValueArg<std::string> control_policy_arg("", "cp", "Control policy to use for dynamic speed", false, "s_curve", "STRING string s_curve");
+	ValueArg<float> sigma_arg("", "sg", "Sigma for gaussian distribution of goal position measurement", false, 0.0, "FLOAT float 0.0");
 	ValueArg<float> control_param1_arg("", "p1", "parameter 1 for controller", false, 1.0, "FLOAT float 1.0");
 	ValueArg<float> control_param2_arg("", "p2", "parameter 2 for controller", false, 1.0, "FLOAT float 1.0");
 	ValueArg<float> control_param3_arg("", "p3", "parameter 3 for controller", false, 1.0, "FLOAT float 1.0");
@@ -133,6 +134,7 @@ int main(int argc, char* argv[])
 	cmd.add(infinite_robots_arg);
 	cmd.add(stable_time_arg);
 	cmd.add(gain_arg);
+	cmd.add(sigma_arg);
 	cmd.add(control_param1_arg);
 	cmd.add(control_param2_arg);
 	cmd.add(control_param3_arg);
@@ -194,6 +196,7 @@ int main(int argc, char* argv[])
 	cfg.controller.stability_condition = stable_time_arg.getValue();
 	cfg.controller.gain = gain_arg.getValue();
 	cfg.controller.control_policy = control_policy_arg.getValue();
+	cfg.controller.sigma = sigma_arg.getValue();
 	cfg.controller.param1 = control_param1_arg.getValue();
 	cfg.controller.param2 = control_param2_arg.getValue();
 	cfg.controller.param3 = control_param3_arg.getValue();

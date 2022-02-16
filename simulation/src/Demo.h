@@ -27,6 +27,7 @@
 #include "VStepper.h"
 #include "Vterrain.h"
 #include "IslandTerrain.h"
+#include "PitTerrain.h"
 #include "DefaultTerrain.h"
 #include <iostream>
 #include <fstream>

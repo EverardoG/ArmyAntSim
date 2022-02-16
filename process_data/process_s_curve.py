@@ -254,15 +254,23 @@ def plot_cob_com_comparison_with_delta(metrics_dict: Dict, ks: List, offsets: Li
     return fig, (ax_xs, ax_ys)
 # plot_bridge_size(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, state = "initial")
 def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None, normalize_to_bl = True, state = "initial"):
+    # Set correct matplotlib font
+    tick_font_size = 18
+    plt.rc('xtick', labelsize=tick_font_size)
+    plt.rc('ytick', labelsize=tick_font_size)
+    axes_font_size = 23
+    plt.rc('axes', labelsize=axes_font_size)
+
+    # Collect data for plotting
     offset_to_width, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("box_width", metrics_dict, ks, offsets)
     offset_to_height, _, _, _ = get_results_for_metric("box_height", metrics_dict, ks, offsets)
 
     # Create two plots - one for xs and one for ys
-    fig, (ax_width, ax_height, ax_colorbar) = plt.subplots(1, 3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(8, 8),dpi=100)
+    fig, (ax_width, ax_height, ax_colorbar) = plt.subplots(1, 3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(12, 8),dpi=100)
     # Set up color maps for cob and com
     # cmap_cob_name = 'BuPu'
     # cmap_name = 'PuRd'
-    cmap_name="YlGnBu"
+    cmap_name="Oranges"
     # cmap_cob = cm.get_cmap(cmap_cob_name)
     cmap = cm.get_cmap(cmap_name)
     # color_indicies = np.linspace(0.25, 0.75, len(offsets))
@@ -272,7 +280,7 @@ def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = T
 
     # Plot the xs and ys of delta from COBB
     linestyle = "."
-    markersize = 8
+    markersize = 20
     max_width = 0
     max_height = 0
     for offset, color_cob in zip(sorted_offsets, colors):
@@ -290,56 +298,88 @@ def plot_bridge_size(metrics_dict: Dict, ks: List, offsets: List, show: bool = T
         ax_width.plot(good_ks_dict[offset], width_arr, linestyle, markersize=markersize, color=color_cob)
         # Plot cob y
         ax_height.plot(good_ks_dict[offset], height_arr, linestyle, markersize=markersize, color=color_cob)
-    # plt.show()
-    # import sys; sys.exit(0)
-    # Label everything
-    if state == "initial": state_title = "Initial "
-    fig.suptitle(state_title+"Bridge Size")
-    if normalize_to_bl:
-        units = " (BL)"
-    else:
-        units = " (m)"
-    ax_width.set_title("Bridge Width")
+
+    # Set up the subplot axes text
+    if normalize_to_bl: units = "(BL)"
+    else: units = "(m)"
+    for ax in [ax_width, ax_height]:
+        ax.set_xlabel(r'$k$'+" (gain)")
     ax_width.set_ylabel("Width "+units)
-    ax_width.set_ylim([0,ceil(max_width)+1])
-
-    ax_height.set_title("Bridge Height")
     ax_height.set_ylabel("Height "+units)
-    ax_height.set_ylim([0,ceil(max_height)+1])
 
-    try:
-        for ax in [ax_width, ax_height]:
-            ax.set_xlabel("k")
-            ax.set_xticks([float(k) for k in sorted_ks])
-            xtick_labels = copy(sorted_ks)
-            for i in range(13): xtick_labels[i+1] = ''
-            for i in range(4): xtick_labels[2*i+16] = ''
-            ax.set_xticklabels(xtick_labels)
-    except:
-        print("Warning: Encountered error labelling axes")
-        pass
+    # Setup xticks for ks
+    for ax in [ax_width, ax_height]:
+        ax.set_xticks([float(k) for k in sorted_ks])
+        xtick_labels = []
+        for count, k_str in enumerate(sorted_ks):
+            if count % 3 == 0:
+                xtick_labels.append(k_str)
+            else:
+                xtick_labels.append("")
+        ax.set_xticklabels(xtick_labels)
 
-    # Set up rightmost axes as colorbars
-    # Remove ticks
-    # for ax, colors in zip([ax_color_com, ax_color_cob], [colors_com, colors_cob]):
-    # Remove ticks
-    ax_colorbar.set_xticks([])
-    ax_colorbar.yaxis.tick_right()
-    offset_ticks = list(np.arange(len(sorted_offsets)/2-1)*2) + [len(sorted_offsets)-1]
-    # print(offset_ticks)
-    # import sys; sys.exit(0)
-    ax_colorbar.set_yticks(offset_ticks)
-    # ax_colorbar.set_yticks([0,4,9,14,19])
-    sorted_offsets_bl = ['%.2f' % np.round((float(o)/1.02), 2) for o in sorted_offsets]
-    sorted_offsets_bl[-1] = "5.50"
-    ax_colorbar.set_yticklabels([str(offset) for offset in np.flip(sorted_offsets_bl[3::2])]+[0], minor=False)
+    # Setup grids
+    for ax in [ax_width, ax_height]:
+        fc = 0.91
+        ax.set_facecolor((fc,fc,fc))
+        gc = 0.98
+        ax.grid(color=(gc,gc,gc), linewidth=2)
 
-    # set up the color bars as images
+    # Make borders and ticks white
+    for ax in [ax_width, ax_height, ax_colorbar]:
+        ax.tick_params(color="white")
+        for spine in ax.spines.values():
+            spine.set_edgecolor("white")
+
+    # Label everything
+    # if state == "initial": state_title = "Initial "
+    # fig.suptitle(state_title+"Bridge Size")
+    # if normalize_to_bl:
+    #     units = " (BL)"
+    # else:
+    #     units = " (m)"
+    # ax_width.set_title("Bridge Width")
+    # ax_width.set_ylabel("Width "+units)
+    # ax_width.set_ylim([0,ceil(max_width)+1])
+
+    # ax_height.set_title("Bridge Height")
+    # ax_height.set_ylabel("Height "+units)
+    # ax_height.set_ylim([0,ceil(max_height)+1])
+
+    # try:
+    #     for ax in [ax_width, ax_height]:
+    #         ax.set_xlabel(r'$k$')
+    #         ax.set_xticks([float(k) for k in sorted_ks])
+    #         xtick_labels = copy(sorted_ks)
+    #         for i in range(13): xtick_labels[i+1] = ''
+    #         for i in range(4): xtick_labels[2*i+16] = ''
+    #         ax.set_xticklabels(xtick_labels)
+    # except:
+    #     print("Warning: Encountered error labelling axes")
+    #     pass
+
+    # Setup colorbar colors
     colors_np = np.flip(np.expand_dims(np.array(colors), axis=1), axis=0)
     ax_colorbar.imshow(colors_np)
-    ax_colorbar.set_title("Offset")
 
+    # Setup colorbar label
+    ax_colorbar.set_xlabel(r'$\sigma$ '+units+"\n(offset)")
+
+    # Setup colorbar ticks
+    ax_colorbar.set_xticks([])
+    offset_ticks = np.arange(len(sorted_offsets))
+    ax_colorbar.set_yticks(offset_ticks)
+    ax_colorbar.set_aspect('auto')
+    offset_label = copy(sorted_offsets)
+    if normalize_to_bl:
+        offset_label = ['%.2f' % (float(offset)/1.02) for offset in offset_label]
+    offset_label.reverse()
+    ax_colorbar.set_yticklabels(offset_label)
+
+    # Tighten up the layout
     fig.tight_layout()
+    fig.subplots_adjust(right=0.97)
+    # subplots_adjust makes it so that there is enough space for "σ (BL)" under colorbar
 
     if save_dir is not None:
         fig.savefig(save_dir+'bridge-size.png')
@@ -560,14 +600,22 @@ def plot_cob_delta(metrics_dict: Dict, ks: List, offsets: List, show: bool = Tru
 
 
 def plot_com(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, save_dir: Optional[str] = None, normalize_to_bl = True, state = "initial"):
+    # Set correct matplotlib font
+    tick_font_size = 18
+    plt.rc('xtick', labelsize=tick_font_size)
+    plt.rc('ytick', labelsize=tick_font_size)
+    plt.rc('legend', fontsize=tick_font_size)
+    axes_font_size = 23
+    plt.rc('axes', labelsize=axes_font_size)
+
     offset_to_com, good_ks_dict, sorted_ks, sorted_offsets = get_results_for_metric("com", metrics_dict, ks, offsets)
 
     # Create two plots - one for xs and one for ys
-    fig, (ax_xs, ax_ys, ax_colorbar) = plt.subplots(1, 3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(10, 10),dpi=100)
+    fig, (ax_xs, ax_ys, ax_colorbar) = plt.subplots(1, 3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(12, 8),dpi=100)
     # Set up color maps for cob and com
     # cmap_cob_name = 'BuPu'
     # cmap_name = 'PuRd'
-    cmap_name="Oranges"
+    cmap_name="Greens"
     # cmap_cob = cm.get_cmap(cmap_cob_name)
     cmap = cm.get_cmap(cmap_name)
     color_indicies = np.linspace(0.25, 0.75, len(offsets))
@@ -580,15 +628,15 @@ def plot_com(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, sav
     correct_y(island_coords, normalize_to_bl)
     ks_f = [float(k) for k in ks]
     island_linestyle = ":"
-    island_linewidth = 1
+    island_linewidth = 5
     ax_xs.plot([min(ks_f), max(ks_f)], np.ones((2))*island_coords[:,0], linestyle=island_linestyle, linewidth=island_linewidth)
     ax_ys.plot([min(ks_f), max(ks_f)], np.ones(2)*island_coords[:,1], linestyle=island_linestyle, linewidth=island_linewidth)
     ax_xs.legend(["Island Left"], loc = "lower right")
-    ax_ys.legend(["Island Bottom"])
+    ax_ys.legend(["Island Bottom"], loc = "lower right")
 
     # Plot the xs and ys of com
     linestyle = "."
-    markersize = 8
+    markersize = 20
     max_width = 0
     max_height = 0
     for offset, color_cob in zip(sorted_offsets, colors):
@@ -613,52 +661,99 @@ def plot_com(metrics_dict: Dict, ks: List, offsets: List, show: bool = True, sav
     # import sys; sys.exit(0)
     # Label everything
     if state == "initial": state_title = "Initial "
-    fig.suptitle(state_title+"Bridge COM")
+    # fig.suptitle(state_title+"Bridge COM")
     if normalize_to_bl:
         units = " (BL)"
     else:
         units = " (m)"
-    ax_xs.set_title("COM X")
-    ax_xs.set_ylabel("Position"+units)
-    # ax_xs.set_ylim([0,ceil(max_width)+1])
 
 
-    ax_ys.set_title("COM Y")
-    ax_ys.set_ylabel("Position"+units)
-    # ax_ys.set_ylim([0,ceil(max_height)+1])
+    # Set up the subplot axes text
+    ax_xs.set_xlabel(r'$k$'+" (gain)")
+    ax_ys.set_xlabel(r'$k$'+" (gain)")
+    ax_xs.set_ylabel("COM "+r'$x$'+" Position"+units)
+    ax_ys.set_ylabel("COM "+r'$y$'+" Position"+units)
 
-    try:
-        for ax in [ax_xs, ax_ys]:
-            ax.set_xlabel("k")
-            ax.set_xticks([float(k) for k in sorted_ks])
-            xtick_labels = copy(sorted_ks)
-            for i in range(13): xtick_labels[i+1] = ''
-            for i in range(4): xtick_labels[2*i+16] = ''
-            ax.set_xticklabels(xtick_labels)
-    except:
-        print("Warning: Encountered error labelling axes")
-        pass
-    # Set up rightmost axes as colorbars
-    # Remove ticks
-    # for ax, colors in zip([ax_color_com, ax_color_cob], [colors_com, colors_cob]):
-    # Remove ticks
-    ax_colorbar.set_xticks([])
-    ax_colorbar.yaxis.tick_right()
-    offset_ticks = list(np.arange(len(sorted_offsets)/2-1)*2) + [len(sorted_offsets)-1]
-    # print(offset_ticks)
-    # import sys; sys.exit(0)
-    ax_colorbar.set_yticks(offset_ticks)
-    # ax_colorbar.set_yticks([0,4,9,14,19])
-    sorted_offsets_bl = ['%.2f' % np.round((float(o)/1.02), 2) for o in sorted_offsets]
-    sorted_offsets_bl[-1] = "5.50"
-    ax_colorbar.set_yticklabels([str(offset) for offset in np.flip(sorted_offsets_bl[3::2])]+[0], minor=False)
+    # Setup xticks for ks
+    for ax in [ax_xs, ax_ys]:
+        ax.set_xticks([float(k) for k in sorted_ks])
+        xtick_labels = []
+        for count, k_str in enumerate(sorted_ks):
+            if count % 3 == 0:
+                xtick_labels.append(k_str)
+            else:
+                xtick_labels.append("")
+        ax.set_xticklabels(xtick_labels)
 
-    # set up the color bars as images
+    # Setup grids
+    for ax in [ax_xs, ax_ys]:
+        fc = 0.91
+        ax.set_facecolor((fc,fc,fc))
+        gc = 0.98
+        ax.grid(color=(gc,gc,gc), linewidth=2)
+
+    # Make borders and ticks white
+    for ax in [ax_xs, ax_ys, ax_colorbar]:
+        ax.tick_params(color="white")
+        for spine in ax.spines.values():
+            spine.set_edgecolor("white")
+
+    # Setup colorbar colors
     colors_np = np.flip(np.expand_dims(np.array(colors), axis=1), axis=0)
     ax_colorbar.imshow(colors_np)
-    ax_colorbar.set_title("Offset")
 
+    # Setup colorbar label
+    ax_colorbar.set_xlabel(r'$\sigma$ '+units+"\n(offset)")
+
+    # Setup colorbar ticks
+    ax_colorbar.set_xticks([])
+    offset_ticks = np.arange(len(sorted_offsets))
+    ax_colorbar.set_yticks(offset_ticks)
+    ax_colorbar.set_aspect('auto')
+    offset_label = copy(sorted_offsets)
+    if normalize_to_bl:
+        offset_label = ['%.2f' % (float(offset)/1.02) for offset in offset_label]
+    offset_label.reverse()
+    ax_colorbar.set_yticklabels(offset_label)
+
+    # Tighten up the layout
     fig.tight_layout()
+    fig.subplots_adjust(right=0.97)
+    # subplots_adjust makes it so that there is enough space for "σ (BL)" under colorbar
+
+    # try:
+    #     for ax in [ax_xs, ax_ys]:
+    #         ax.set_xlabel("k")
+    #         ax.set_xticks([float(k) for k in sorted_ks])
+    #         xtick_labels = copy(sorted_ks)
+    #         for i in range(13): xtick_labels[i+1] = ''
+    #         for i in range(4): xtick_labels[2*i+16] = ''
+    #         ax.set_xticklabels(xtick_labels)
+    # except:
+    #     print("Warning: Encountered error labelling axes")
+    #     pass
+
+
+
+    # # Set up rightmost axes as colorbars
+    # # Remove ticks
+    # # for ax, colors in zip([ax_color_com, ax_color_cob], [colors_com, colors_cob]):
+    # # Remove ticks
+    # ax_colorbar.set_xticks([])
+    # ax_colorbar.yaxis.tick_right()
+    # offset_ticks = list(np.arange(len(sorted_offsets)/2-1)*2) + [len(sorted_offsets)-1]
+    # # print(offset_ticks)
+    # # import sys; sys.exit(0)
+    # ax_colorbar.set_yticks(offset_ticks)
+    # # ax_colorbar.set_yticks([0,4,9,14,19])
+    # sorted_offsets_bl = ['%.2f' % np.round((float(o)/1.02), 2) for o in sorted_offsets]
+    # sorted_offsets_bl[-1] = "5.50"
+    # ax_colorbar.set_yticklabels([str(offset) for offset in np.flip(sorted_offsets_bl[3::2])]+[0], minor=False)
+
+    # # set up the color bars as images
+    # colors_np = np.flip(np.expand_dims(np.array(colors), axis=1), axis=0)
+    # ax_colorbar.imshow(colors_np)
+    # ax_colorbar.set_title("Offset")
 
     if save_dir is not None:
         fig.savefig(save_dir+'bridge-size.png')
@@ -672,6 +767,15 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
     # 1. Goal Not Reached, No Successful Bridge Formation
     # 2. Bridge Formed but did not fully dissolve
     # 3. Bridge Formed and fully dissolved
+
+    # Set correct matplotlib font
+    tick_font_size = 16
+    plt.rc('xtick', labelsize=tick_font_size)
+    plt.rc('ytick', labelsize=tick_font_size)
+    axes_font_size = 21
+    plt.rc('axes', labelsize=axes_font_size)
+    plt.rc('axes', titlesize=axes_font_size)
+    # plt.rc('axes', suptitlesize=axes_font_size)
 
     # If the bridge has a formation time of 0, I know it didn't form
     # If the bridge has a dissolution time >0, then I know it successfully dissolved
@@ -688,13 +792,15 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
 
     k_to_plot_ind = {}
     for plot_ind_k, k in enumerate(sorted_ks):
-        k_to_plot_ind[k] = plot_ind_k
+        k_to_plot_ind[float(k)] = plot_ind_k
     # Look at good ks for a specific offset
     check_offset = "0.29"
 
+    print(k_to_plot_ind)
+
     for ind_offset, offset in enumerate(np.flip(sorted_offsets)):
         for ind_k, k in enumerate(good_ks_dict[offset]): # This is NOT the TRUE index of k -> This is only the index of the k in this subsampled list, which does not include ALL ks. That means that the index is going to be wrong for higher k values a lot of the time.
-            plot_ind_k = k_to_plot_ind[str(k)]
+            plot_ind_k = k_to_plot_ind[float(k)]
             # We know that a bridge successfully formed for this data point
             dissolution_time = offset_to_dissolution_time[offset][ind_k]
             # If there is a dissolution time, then we have case 3 where the
@@ -721,9 +827,24 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
 
     if mid_k is None:
         # Left is the colormap itself and on the right is a colorbar/label
-        fig, axs = plt.subplots(1, 2, sharey=False, gridspec_kw={'width_ratios': [1,0.1]}, figsize=(24, 13))
+        fig, axs = plt.subplots(1, 2, sharey=False, gridspec_kw={'width_ratios': [1,0.1]}, figsize=(12, 8), dpi=100)
         ax_grid, ax_colorbar = axs
         ax_grid.imshow(success_grid, cmap = custom_cmap)
+
+        # Set main plot title
+        axs[0].set_title("Structure Formation and Dissolution")
+
+        # Setup labels for ks
+        axs[0].set_xticks(np.arange(len(sorted_ks)))
+        axs[0].set_xticklabels(sorted_ks)
+        # Setup labels for offsets
+        axs[0].set_yticks(np.flip(np.arange(len(sorted_offsets))))
+        axs[0].set_yticklabels(sorted_offsets)
+
+        # Set labels for x and y
+        axs[0].set_xlabel(r'$k$'+" (gain)")
+        axs[0].set_ylabel(r'$\sigma$'+" (offset)")
+
     else:
         fig, axs = plt.subplots(1,3, sharey=False, gridspec_kw={'width_ratios': [1,1,0.1]}, figsize=(8, 8))
         (ax_grid_low_ks, ax_grid_high_ks, ax_colorbar) = axs
@@ -791,7 +912,7 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
         ax_grid_high_ks.set_title("For high k values")
 
     # Add a title
-    fig.suptitle("Bridge Formation and Dissolution")
+    # fig.suptitle("Bridge Formation and Dissolution")
 
     # Setup colorbar
     colorbar_im = np.expand_dims(np.flip(np.arange(3)), axis = 1)
@@ -800,13 +921,14 @@ def plot_formation_dissolution_grid(metrics_dict: Dict, ks: List, offsets: List,
     # Setup ticks on colorbar
     ax_colorbar.set_title("Legend")
     ax_colorbar.set_xticks([])
-    ax_colorbar.yaxis.tick_right()
+    # ax_colorbar.yaxis.tick_right()
     ax_colorbar.set_yticks([0,1,2])
     ax_colorbar.set_yticklabels(["Successful Formation\n  and Dissolution", "Successful Formation,\n  Failed Dissolution", "Failed Formation"])
+    # ax_colorbar.set_yticklabels(["Successfully Formed Structure\n  and Dissolved", "Successfully Formed Structure,\n  Failed to Dissolve", "Failed to Form Structure"])
 
-    # fig.tight_layout()
+    fig.tight_layout()
     # plt.subplot_tool()
-    plt.subplots_adjust(wspace=0,hspace=0)
+    # plt.subplots_adjust(wspace=0,hspace=0)
 
     if save_dir is not None:
         fig.savefig(save_dir+'formation-dissolution-grid.png')
@@ -1113,23 +1235,23 @@ PP.pprint(toolong_list)
 if args.metric is None:
     for metric_name in METRICS:
         plot_metric(metric_name, metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "cob-com" or args.metric == "com-cob":
+elif args.metric is None or args.metric == "cob-com" or args.metric == "com-cob":
     plot_cob_com_comparison(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "com":
+elif args.metric is None or args.metric == "com":
     plot_com(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "cob-delta":
+elif args.metric is None or args.metric == "cob-delta":
     plot_cob_delta(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "cob-com-delta" or args.metric == "com-cob-delta":
+elif args.metric is None or args.metric == "cob-com-delta" or args.metric == "com-cob-delta":
     plot_cob_com_comparison_with_delta(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "formation-grid":
-    plot_formation_dissolution_grid(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = "2.5")
-if args.metric is None or args.metric == "num-robots":
+elif args.metric is None or args.metric == "formation-grid":
+    plot_formation_dissolution_grid(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = None)
+elif args.metric is None or args.metric == "num-robots":
     plot_num_robots_bridge(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)
-if args.metric is None or args.metric == "percent-dissolution":
+elif args.metric is None or args.metric == "percent-dissolution":
     plot_percent_dissolution(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, mid_k = "2.5")
-if args.metric is None or args.metric == "bridge-size-initial":
+elif args.metric is None or args.metric == "bridge-size-initial":
     plot_bridge_size(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, state = "initial")
-if args.metric is None or args.metric == "x-char":
+elif args.metric is None or args.metric == "x-char":
     plot_x_characteristics(metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save, normalize_to_bl = True)
 else:
     plot_metric(args.metric, metrics_dict, ks, offsets, show = not args.quiet, save_dir = args.save)

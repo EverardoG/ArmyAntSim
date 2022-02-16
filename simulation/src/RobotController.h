@@ -12,7 +12,10 @@
 #define ROBOTCONTROLLER_H_
 
 #include "Robot.h"
+#include "constants.h"
 #include <unordered_map>
+#include <random>
+#include <math.h>
 
 class RobotController {
 public:
@@ -249,6 +252,9 @@ public:
 
 	b2Vec2 getAvgPos();
 
+	// Returns a goal perturbed by a guassian distribution whose std deviation is sigma
+	b2Vec2 perturbGoal(b2Vec2 goal_pos);
+
 	/**
 	 * Flag used to notify when a new robot enter the bridge state.
 	 * It is used to write a new entry in the bridge file.
@@ -257,6 +263,8 @@ public:
 	bool m_bridgeEntry = false;
 
 	int getNbRobotsReachedGoal();
+
+	// void resetNormalDistribution(float sigma) {n_distribution = std::normal_distribution<float>(0.0, m_controllerParam.sigma);}
 
 private:
 
@@ -286,6 +294,11 @@ private:
 
 	int m_M_TO_PX; //Copy of the scale to do the conversion from real dimensions (m) to simulated ones (pixels)
 	std::unordered_map<int, bool> m_robots_reached_goal; // ids of all the robots that have passed the goal (if one was set)
+
+	// Distributions for random goal perturbation
+	std::default_random_engine generator;
+	std::normal_distribution<float> n_distribution = std::normal_distribution<float>(0.0, m_controllerParam.sigma);
+	std::uniform_real_distribution<float> u_distribution = std::uniform_real_distribution<float>(0.0, 2*PI);
 };
 
 #endif /* ROBOTCONTROLLER_H_ */
