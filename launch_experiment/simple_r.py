@@ -17,7 +17,7 @@ command += " --p1 20"               # Controller param 1
 # command += " --p3 2.3621052631578947"   # Controller param 3
 command += " --torque 10"           # Max torque each flippybot has
 command += " --sg 0.0" # Add noise to goal position estimate
-command += " --bridge_delay 4.0" # Delay in bridge state before returning to walking state
+command += " --bridge_delay 1.0" # Delay in bridge state before returning to walking state
 command += " --cp slowdown_away_from_goal"          # Control policy
 command += " --file_path /home/egonzalez/data/temp/results_" + run_id + "/" # Where to save results
 

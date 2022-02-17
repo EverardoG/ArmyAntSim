@@ -180,7 +180,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 	}
 
 	if (robotA && robotB && (rA==rB)){
-		printf("contact within robot\n");
+		// printf("contact within robot\n");
 		return;
 	}
 
@@ -626,12 +626,39 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 			}
 			// start w. robot's current speed
 			float new_speed = m_robotVector[i]->getSpeed();
+			// Continue regrippping if the robot is trying to regrip
+			if (m_robotVector[i]->m_regrip_state && (m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration ) {
+				m_robotVector[i]->m_regrip_state = false;
+				// Update last position
+				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+				std::cout << "Regrip attempt finished from " << m_robotVector[i]->getId() << std::endl;
+			}
+			// Attempt to regrip if the robot is stuck. Move opposite direction for a set time. Before going back to default behavior.
+			if ( abs(m_robotVector[i]->getPosition().y - m_robotVector[i]->m_last_position.y) <= 0.025
+			    && abs(m_robotVector[i]->getPosition().x - m_robotVector[i]->m_last_position.x) <= 0.025
+				&& (m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time
+				&& m_robotVector[i]->getState() == WALK) {
+					std::cout << "Regrip attempt triggered from " << m_robotVector[i]->getId() << std::endl;
+					if (new_speed >= 0) {
+						new_speed = -0.5;
+					}
+					else {
+						new_speed = 0.5;
+					}
+					// Robot is now trying to regrip
+					m_robotVector[i]->m_regrip_start_time = m_elapsedTime;
+					m_robotVector[i]->m_regrip_state = true;
+					// Update last position
+					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+				}
 			// If the robot already reached the goal, then move at the constant speed
-			if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
+			else if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
 				new_speed = m_robotParam.speed;
 			}
 			// Otherwise, calculate the robot speed
-			else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) > m_robotVector[i]->m_pos_update_time && new_speed != 0) {
+			else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time && new_speed != 0) {
 				// Calculate distance to goal since last time
 				b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
 				float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
@@ -653,7 +680,7 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				if (m_robotVector[i]->getId() == 1) {
-					std::cout << "new_speed: " << new_speed << std::endl;
+					// std::cout << "new_speed: " << new_speed << std::endl;
 				}
 			}
 			// Actually set the robot to the new speed

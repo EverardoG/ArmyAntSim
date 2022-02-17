@@ -11,7 +11,7 @@ PitTerrain::PitTerrain(b2World* world, config::sWindow windowParam, config::sTer
 : Terrain(world, windowParam, terrainParam, bodyLength){
 	// TODO Auto-generated constructor stub
 	m_M_TO_PX = m_windowSize.x /  25.0 * bodyLength;
-	m_posY = 10 * bodyLength;
+	m_posY = 5 * bodyLength;
 
 }
 
