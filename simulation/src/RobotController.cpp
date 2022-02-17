@@ -488,6 +488,10 @@ void RobotController::SetGlobalSpeed(double desired_speed){
 // maybe change delay instead of speed (this is more portable for real robot)
 
 b2Vec2 RobotController::perturbGoal(b2Vec2 goal_pos) {
+	if (m_controllerParam.sigma == 0.0) {
+		b2Vec2 perturbed_goal = b2Vec2(goal_pos.x, goal_pos.y);
+		return perturbed_goal;
+	}
 	// Generate random number for radius of perturbation
 	float r = n_distribution(generator);
 	// Generate angle for perturbation
@@ -620,74 +624,145 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 		for (int i=0; i<m_robotVector.size(); i++) {
 			// Grab a perturbed Goal
 			b2Vec2 measured_goal_pos = perturbGoal(m_goal_pos);
-			// Unless sigma is set to 0. Then reset this to the actual goal position
-			if (m_controllerParam.sigma == 0.0) {
-				measured_goal_pos = m_goal_pos;
-			}
 			// start w. robot's current speed
 			float new_speed = m_robotVector[i]->getSpeed();
-			// Continue regrippping if the robot is trying to regrip
-			if (m_robotVector[i]->m_regrip_state && (m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration ) {
-				m_robotVector[i]->m_regrip_state = false;
-				// Update last position
+			bool prev_regrip_state = m_robotVector[i]->m_regrip_state;
+			// Robot is trying to regrip
+			if (m_robotVector[i]->m_regrip_state) {
+				std::cout << "Attempting regrip from " << m_robotVector[i]->getId() << std::endl;
+				// Stop trying to regrip if enough time has passed since start of regrip
+				if ((m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration) {
+					// std::cout << "m_elapsedTime: " m_elapsedTime << " "
+					std::cout << "Ending regrip attempt " << std::endl;
+					m_robotVector[i]->m_regrip_state = false;
+					new_speed = m_robotVector[i]->m_speed_before_regrip;
+				}
+				// Update last position and time
 				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
-				std::cout << "Regrip attempt finished from " << m_robotVector[i]->getId() << std::endl;
 			}
-			// Attempt to regrip if the robot is stuck. Move opposite direction for a set time. Before going back to default behavior.
-			if ( abs(m_robotVector[i]->getPosition().y - m_robotVector[i]->m_last_position.y) <= 0.025
-			    && abs(m_robotVector[i]->getPosition().x - m_robotVector[i]->m_last_position.x) <= 0.025
-				&& (m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time
-				&& m_robotVector[i]->getState() == WALK) {
-					std::cout << "Regrip attempt triggered from " << m_robotVector[i]->getId() << std::endl;
-					if (new_speed >= 0) {
-						new_speed = -0.5;
+			// Robot is in walking state and enough time has passed that its time for a speed update OR robot just stopped trying to regrip
+			else if ( m_robotVector[i]->getState() == WALK    // Robot is walking
+				&& (// Robot is not trying to regrip and enough time has passed for an update
+				(m_robotVector[i]->m_regrip_state == false && (m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time))){
+				// || // Robot just stopped trying to regrip
+				// (prev_regrip_state==true && m_robotVector[i]->m_regrip_state==false))) {
+				std::cout << "Robot is walking " << std::endl;
+				// Check if robot is stuck and initiate a regrip
+				if ( abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) < 0.025
+					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.025
+					&& abs(m_robotVector[i]->getSpeed()) > 0.05) {
+					std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
+								" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
+								" | Current time: " << m_elapsedTime <<
+								" | Diff x: " << abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) <<
+								" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) << std::endl;
+					// Grab speed before regrip state
+					m_robotVector[i]->m_speed_before_regrip = new_speed;
+					// Set speed to be slow in opposite direction
+					if (new_speed < 0) {
+						new_speed = 0.3;
 					}
 					else {
-						new_speed = 0.5;
+						new_speed = -0.3;
 					}
-					// Robot is now trying to regrip
-					m_robotVector[i]->m_regrip_start_time = m_elapsedTime;
+					// Set regrip state
 					m_robotVector[i]->m_regrip_state = true;
-					// Update last position
+					m_robotVector[i]->m_regrip_start_time = m_elapsedTime;
+					// Update last position and time
 					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
-			// If the robot already reached the goal, then move at the constant speed
-			else if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
-				new_speed = m_robotParam.speed;
-			}
-			// Otherwise, calculate the robot speed
-			else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time && new_speed != 0) {
-				// Calculate distance to goal since last time
-				b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
-				float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
-				b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
-				float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
-				// Slowdown if the robot is moving away from the goal. Otherwise speed stays the same
-				if (curr_distance > prev_distance) {
-					if (new_speed > 0) {
-						new_speed = new_speed - m_controllerParam.param1 * (curr_distance - prev_distance);
-					}
-					else if (new_speed < 0) {
-						new_speed = new_speed + m_controllerParam.param1 * (curr_distance - prev_distance);
-					}
-					// if (new_speed < 0.0) {
-					// 	new_speed = 0.0;
-					// }
+				// Robot has reached the goal
+				else if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
+					new_speed = m_robotParam.speed;
 				}
-				// Update last position
+				// Robot has not reached the goal
+				else {
+					// Calculate distance to goal since last time
+					b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
+					float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
+					b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
+					float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
+					// Slowdown if the robot is moving away from the goal. Otherwise speed up
+					if (curr_distance > prev_distance) {
+						if (new_speed > 0) {
+							new_speed = new_speed - m_controllerParam.param1 * (curr_distance - prev_distance);
+						}
+						else if (new_speed < 0) {
+							new_speed = new_speed + m_controllerParam.param1 * (curr_distance - prev_distance);
+						}
+					}
+				}
 				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
-				if (m_robotVector[i]->getId() == 1) {
-					// std::cout << "new_speed: " << new_speed << std::endl;
-				}
 			}
+			std::cout << "new_speed: " << new_speed << std::endl;
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
 		}
 	}
 }
+			// // Continue regrippping if the robot is trying to regrip
+			// if (m_robotVector[i]->m_regrip_state && (m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration ) {
+			// 	m_robotVector[i]->m_regrip_state = false;
+			// 	// Update last position
+			// 	m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+			// 	m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+			// 	std::cout << "Regrip attempt finished from " << m_robotVector[i]->getId() << std::endl;
+			// }
+			// // Attempt to regrip if the robot is stuck. Move opposite direction for a set time. Before going back to default behavior.
+			// if ( abs(m_robotVector[i]->getPosition().y - m_robotVector[i]->m_last_position.y) <= 0.025
+			//     && abs(m_robotVector[i]->getPosition().x - m_robotVector[i]->m_last_position.x) <= 0.025
+			// 	&& (m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time
+			// 	&& m_robotVector[i]->getState() == WALK) {
+			// 		std::cout << "Regrip attempt triggered from " << m_robotVector[i]->getId() << std::endl;
+			// 		if (new_speed >= 0) {
+			// 			new_speed = -0.5;
+			// 		}
+			// 		else {
+			// 			new_speed = 0.5;
+			// 		}
+			// 		// Robot is now trying to regrip
+			// 		m_robotVector[i]->m_regrip_start_time = m_elapsedTime;
+			// 		m_robotVector[i]->m_regrip_state = true;
+			// 		// Update last position
+			// 		m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+			// 		m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+			// 	}
+			// If the robot already reached the goal, then move at the constant speed
+			// else if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
+			// 	new_speed = m_robotParam.speed;
+			// }
+			// Otherwise, calculate the robot speed
+			// else if ((m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time && new_speed != 0) {
+			// 	// Calculate distance to goal since last time
+			// 	b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
+			// 	float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
+			// 	b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
+			// 	float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
+			// 	// Slowdown if the robot is moving away from the goal. Otherwise speed stays the same
+			// 	if (curr_distance > prev_distance) {
+			// 		if (new_speed > 0) {
+			// 			new_speed = new_speed - m_controllerParam.param1 * (curr_distance - prev_distance);
+			// 		}
+			// 		else if (new_speed < 0) {
+			// 			new_speed = new_speed + m_controllerParam.param1 * (curr_distance - prev_distance);
+			// 		}
+			// 		// if (new_speed < 0.0) {
+			// 		// 	new_speed = 0.0;
+			// 		// }
+			// 	}
+			// 	// Update last position
+			// 	m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+			// 	m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+			// 	if (m_robotVector[i]->getId() == 1) {
+			// 		// std::cout << "new_speed: " << new_speed << std::endl;
+			// 	}
+			// }
+	// 	}
+	// }
+
 
 bool RobotController::checkTowering(){
 	for (int i=0; i<m_robotVector.size(); i++){

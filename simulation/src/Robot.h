@@ -295,10 +295,11 @@ public:
 	b2Vec2 m_last_position = b2Vec2(0.0,0.0);
 	float m_pos_update_time = 1; // Update the last position every __ seconds
 	float m_last_position_time_update = 0; // Last time that last_position was updated
-	float m_regrip_duration = 0.1; /// Time in seconds that a regrip attempt should last
+	float m_regrip_duration = 0.5; /// Time in seconds that a regrip attempt should last
 	float m_regrip_delay = 1; // Time before trying another regrip
 	bool m_regrip_state = false; // Robot is attempting to regrip
 	float m_regrip_start_time = 0.0;
+	float m_speed_before_regrip = 0.0;
 
 	/**
 	 * Pointers on the two possible gripping joints
