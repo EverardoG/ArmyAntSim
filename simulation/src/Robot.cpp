@@ -942,7 +942,7 @@ void Robot::grip(b2Contact* contact, b2Body* otherBody, double m_to_px){ //ou al
 
 }
 bool Robot::gripSide(b2Contact* contact, b2Body* otherBody, double m_to_px){ //ou alors fonction retourne un joint ?
-	std::cout << "gripSide()" << std::endl;
+	// std::cout << "gripSide()" << std::endl;
 	// if(!contactOnGripSide(contact)){
 	// 	return false;
 	// }
