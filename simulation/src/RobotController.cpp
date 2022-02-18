@@ -502,7 +502,7 @@ b2Vec2 RobotController::perturbGoal(b2Vec2 goal_pos) {
 	return perturbed_goal;
 }
 
-void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime){
+void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime, std::string simulation_state){
 	if (m_controllerParam.control_policy == "s_curve") {
 		// Calculates the speed for every robot so that the robots move toward the desired goal
 		for (int i=0; i<m_robotVector.size(); i++){
@@ -629,11 +629,11 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 			bool prev_regrip_state = m_robotVector[i]->m_regrip_state;
 			// Robot is trying to regrip
 			if (m_robotVector[i]->m_regrip_state) {
-				std::cout << "Attempting regrip from " << m_robotVector[i]->getId() << std::endl;
+				// std::cout << "Attempting regrip from " << m_robotVector[i]->getId() << std::endl;
 				// Stop trying to regrip if enough time has passed since start of regrip
 				if ((m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration) {
 					// std::cout << "m_elapsedTime: " m_elapsedTime << " "
-					std::cout << "Ending regrip attempt " << std::endl;
+					std::cout << "Ending regrip attempt from " << m_robotVector[i]->getId() << std::endl;
 					m_robotVector[i]->m_regrip_state = false;
 					new_speed = m_robotVector[i]->m_speed_before_regrip;
 				}
@@ -647,11 +647,11 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 				(m_robotVector[i]->m_regrip_state == false && (m_elapsedTime - m_robotVector[i]->m_last_position_time_update) >= m_robotVector[i]->m_pos_update_time))){
 				// || // Robot just stopped trying to regrip
 				// (prev_regrip_state==true && m_robotVector[i]->m_regrip_state==false))) {
-				std::cout << "Robot is walking " << std::endl;
+				// std::cout << "Robot is walking " << std::endl;
 				// Check if robot is stuck and initiate a regrip
 				if ( abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) < 0.025
 					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.025
-					&& abs(m_robotVector[i]->getSpeed()) > 0.05) {
+					&& m_robotVector[i]->getSpeed() != 0.0) {
 					std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
 								" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
 								" | Current time: " << m_elapsedTime <<
@@ -673,31 +673,39 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
-				// Robot has reached the goal
-				else if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
-					new_speed = m_robotParam.speed;
-				}
-				// Robot has not reached the goal
-				else {
-					// Calculate distance to goal since last time
-					b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
-					float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
-					b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
-					float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
-					// Slowdown if the robot is moving away from the goal. Otherwise speed up
-					if (curr_distance > prev_distance) {
-						if (new_speed > 0) {
-							new_speed = new_speed - m_controllerParam.param1 * (curr_distance - prev_distance);
-						}
-						else if (new_speed < 0) {
-							new_speed = new_speed + m_controllerParam.param1 * (curr_distance - prev_distance);
+				// Update speeds dynamically if simulation is not yet in dissolution state
+				else if (simulation_state != "dissolution") {
+					// Robot has reached the goal
+					if(m_robotVector[i]->getPosition().y < measured_goal_pos.y && m_robotVector[i]->getPosition().x > measured_goal_pos.x){
+						new_speed = m_robotParam.speed;
+					}
+					// Robot has not reached the goal
+					else {
+						// Calculate distance to goal since last time
+						b2Vec2 prev_vector = m_robotVector[i]->m_last_position - measured_goal_pos;
+						float prev_distance = pow( pow(prev_vector.x, 2.0) + pow(prev_vector.y, 2.0), 0.5);
+						b2Vec2 curr_vector = m_robotVector[i]->getPosition() - measured_goal_pos;
+						float curr_distance = pow( pow(curr_vector.x, 2.0) + pow(curr_vector.y, 2.0), 0.5);
+						// Slowdown if the robot is moving away from the goal. Otherwise speed up
+						if (curr_distance > prev_distance) {
+							if (new_speed > 0) {
+								new_speed = new_speed - m_controllerParam.param1 * (curr_distance - prev_distance);
+							}
+							else if (new_speed < 0) {
+								new_speed = new_speed + m_controllerParam.param1 * (curr_distance - prev_distance);
+							}
 						}
 					}
+					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
-				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
-				m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
+				// Set speed to global speed if simulation is in dissolution state
+				else {
+					new_speed = m_robotParam.speed;
+				}
+
 			}
-			std::cout << "new_speed: " << new_speed << std::endl;
+			// std::cout << "new_speed: " << new_speed << std::endl;
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
 		}

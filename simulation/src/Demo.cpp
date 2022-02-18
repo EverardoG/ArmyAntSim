@@ -265,7 +265,7 @@ void Demo::demoLoop(){
 			//	}
 				// Update the robot speeds dynamically if relevant
 				if (m_config.robot.dynamic_speed) {
-					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), m_elapsedTime);
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), m_elapsedTime, "!dissolution");
 				}
 
 				// Check if any robot has gotten up beyond the window
@@ -328,6 +328,12 @@ void Demo::demoLoop(){
 				break;
 
 			case SimulationState::Dissolution:
+				// Update the robot speeds dynamically if relevant
+				if (m_config.robot.dynamic_speed) {
+					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), m_elapsedTime, "dissolution");
+				}
+
+
 				// std::cout << "Dissolution State" << std::endl;
 				m_robotController.step(m_config.window.WINDOW_X_PX);
 				m_world->Step(1.f/60.f, 100, 100);
@@ -341,12 +347,12 @@ void Demo::demoLoop(){
 					window.display();
 				}
 
-				if (m_elapsedTime > 790) printf("About to write bridge file\n");
-				writeBridgeFile();
-				if (m_elapsedTime > 790) printf("successfully wrote bridge file\n");
+				// if (m_elapsedTime > 790) printf("About to write bridge file\n");
+				// writeBridgeFile();
+				// if (m_elapsedTime > 790) printf("successfully wrote bridge file\n");
 
-				m_robotController.isBridgeDissolved();
-				if (m_elapsedTime > 790) printf("Checked if bridge is dissolved\n");
+				// m_robotController.isBridgeDissolved();
+				// if (m_elapsedTime > 790) printf("Checked if bridge is dissolved\n");
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
@@ -356,7 +362,7 @@ void Demo::demoLoop(){
 				m_elapsedTime += 1.f/FPS;
 				m_currentIt ++;
 
-				if (m_elapsedTime > 790) printf("Updated timers\n");
+				// if (m_elapsedTime > 790) printf("Updated timers\n");
 				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
 				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
 					m_tooLongDissolution;
@@ -364,7 +370,7 @@ void Demo::demoLoop(){
 
 				break;
 		}
-		if (m_elapsedTime > 790) printf("Got out of cases\n");
+		// if (m_elapsedTime > 790) printf("Got out of cases\n");
 		// Run this code regardless of case
 		// End the simulation if no robot has moved right by a body length in 60 seconds
 		//     and no robot has despawnedAbout to write bridge file

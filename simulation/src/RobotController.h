@@ -248,7 +248,7 @@ public:
 	/**
 	 *
 	*/
-	void calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime);
+	void calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTime, std::string simulation_state);
 
 	b2Vec2 getAvgPos();
 
