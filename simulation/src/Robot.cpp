@@ -947,6 +947,9 @@ bool Robot::gripSide(b2Contact* contact, b2Body* otherBody, double m_to_px){ //o
 	// 	return false;
 	// }
 
+	// TODO: Make it so that if a robot is grabbed, it can't grab any other robots.
+	// This may solve the double grap (or "up-grab?") problem
+
 	b2WorldManifold worldManifold;
 	contact->GetWorldManifold(&worldManifold);
 	b2Body* bodyA = contact->GetFixtureA()->GetBody();

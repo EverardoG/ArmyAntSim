@@ -185,6 +185,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 	}
 
 	// start Finite-state machine
+	// Looks like this is where logic for whether or not to setup grip joints happens
 	if (contactorA && contactorB){
 		std::cout << "A && B" << std::endl;
 
@@ -193,12 +194,14 @@ void RobotController::findContactRobots(b2Contact* contact){
 		double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
 
 		if(abs(angleA) > m_controllerParam.angle_limit && abs(angleB) > m_controllerParam.angle_limit){
+			// TODO: If two robots make contact, then whichever robot is on the bottom goes into bridge state
+			// while the top robot grips
 			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 			rA->setContact(true);
-			rB->gripSide(contact, bodyContactA, m_M_TO_PX);
-			rB->setContact(true);
+			// rB->gripSide(contact, bodyContactA, m_M_TO_PX);
+			// rB->setContact(true);
 			setRobotState(*rA, BRIDGE);
-			setRobotState(*rB, BRIDGE); //TODO becareful changed rule
+			// setRobotState(*rB, BRIDGE); //TODO becareful changed rule
 		}
 		else if(abs(angleA) > m_controllerParam.angle_limit){
 			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
@@ -649,14 +652,16 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 				// (prev_regrip_state==true && m_robotVector[i]->m_regrip_state==false))) {
 				// std::cout << "Robot is walking " << std::endl;
 				// Check if robot is stuck and initiate a regrip
-				if ( abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) < 0.025
-					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.025
+				if ( abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) < 0.25
+					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.25
 					&& m_robotVector[i]->getSpeed() != 0.0) {
 					std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
 								" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
 								" | Current time: " << m_elapsedTime <<
 								" | Diff x: " << abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) <<
-								" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) << std::endl;
+								" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) <<
+								" | m_robotVector[i]->getSpeed()" << m_robotVector[i]->getSpeed() <<
+								std::endl;
 					// Grab speed before regrip state
 					m_robotVector[i]->m_speed_before_regrip = new_speed;
 					// Set speed to be slow in opposite direction
@@ -700,12 +705,14 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
 				// Set speed to global speed if simulation is in dissolution state
+				// TODO: THis is getting triggered when robots should instead be wiggling to regrip
 				else {
 					new_speed = m_robotParam.speed;
+					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
+					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
-
+				std::cout << "new_speed: " << new_speed << " | Id: " << m_robotVector[i]->getId() << std::endl;
 			}
-			// std::cout << "new_speed: " << new_speed << std::endl;
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
 		}
