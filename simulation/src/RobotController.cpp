@@ -194,19 +194,32 @@ void RobotController::findContactRobots(b2Contact* contact){
 		double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
 
 		if(abs(angleA) > m_controllerParam.angle_limit && abs(angleB) > m_controllerParam.angle_limit){
-			// TODO: If two robots make contact, then whichever robot is on the bottom goes into bridge state
-			// while the top robot grips
-			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
-			rA->setContact(true);
+			// If two robots make contact and can grip, then whichever robot is on the bottom goes into bridge state
+			// Robot A is on top
+			if (rA->getPosition().y < rB->getPosition().y) {
+				// Robot A grips and robot B goes into bridge state
+				rA->gripSide(contact, bodyContactB, m_M_TO_PX);
+				rA->setContact(true);
+				setRobotState(*rB, BRIDGE);
+			}
+			// Robot B is on top
+			else {
+				// Robot B grips and robot A goes into bridge state
+				rB->gripSide(contact, bodyContactA, m_M_TO_PX);
+				rB->setContact(true);
+				setRobotState(*rB, BRIDGE);
+			}
+			// rA->gripSide(contact, bodyContactB, m_M_TO_PX);
+			// rA->setContact(true);
 			// rB->gripSide(contact, bodyContactA, m_M_TO_PX);
 			// rB->setContact(true);
-			setRobotState(*rA, BRIDGE);
+			// setRobotState(*rA, BRIDGE);
 			// setRobotState(*rB, BRIDGE); //TODO becareful changed rule
 		}
 		else if(abs(angleA) > m_controllerParam.angle_limit){
 			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 			rA->setContact(true);
-			setRobotState(*rA, BRIDGE); //WALK
+			setRobotState(*rA, WALK); //WALK
 			setRobotState(*rB, BRIDGE); //TODO becareful changed rule
 		}
 
@@ -214,7 +227,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 			rB->gripSide(contact, bodyContactA, m_M_TO_PX);
 			rB->setContact(true);
 			setRobotState(*rA, BRIDGE);
-			setRobotState(*rB, BRIDGE); //WALK
+			setRobotState(*rB, WALK); //WALK
 		}
 
 	}
@@ -480,7 +493,12 @@ double RobotController::getDissolutionTime(){
 // Set speed for all robots
 void RobotController::SetGlobalSpeed(double desired_speed){
 	for (int i=0; i<m_robotVector.size(); i++){
-		m_robotVector[i]->setSpeed(desired_speed);
+		if (m_robotVector[i]->m_regrip_state == true) {
+			m_robotVector[i]->m_speed_before_regrip = desired_speed;
+		}
+		else {
+			m_robotVector[i]->setSpeed(desired_speed);
+		}
 	}
 }
 
@@ -705,16 +723,20 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
 				// Set speed to global speed if simulation is in dissolution state
-				// TODO: THis is getting triggered when robots should instead be wiggling to regrip
 				else {
 					new_speed = m_robotParam.speed;
 					m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
-				std::cout << "new_speed: " << new_speed << " | Id: " << m_robotVector[i]->getId() << std::endl;
+				if (m_robotVector[i]->getId() == 12){
+					std::cout << "new_speed: " << new_speed << " | Id: " << m_robotVector[i]->getId() << std::endl;
+				}
 			}
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
+			if (m_robotVector[i]->getId() == 12) {
+				std::cout << "Actual speed " << m_robotVector[i]->getSpeed() << " | Id: " << m_robotVector[i]->getId() << std::endl;
+			}
 		}
 	}
 }

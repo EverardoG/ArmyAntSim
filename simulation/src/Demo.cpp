@@ -424,6 +424,7 @@ void Demo::demoLoop(){
 	      m_height_final = getBridgeHeight();
 
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
+				// TODO: dont update speeds if a robot is in its regrip state
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.SetGlobalSpeed(m_config.robot.speed);
 				}
