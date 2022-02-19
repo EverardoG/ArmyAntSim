@@ -189,7 +189,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 	// start Finite-state machine
 	// Looks like this is where logic for whether or not to setup grip joints happens
 	if (contactorA && contactorB){
-		std::cout << "A && B" << std::endl;
+		// std::cout << "A && B" << std::endl;
 
 		double angleA = rA->getBody()->GetAngle() - rA->m_referenceAngle;
 
@@ -404,27 +404,27 @@ void RobotController::removeRobot(){
 			// printf("id is %d\n", id);
 			std::vector<Robot*>::iterator pRob =  m_robotVector.begin()+id;
 
-			printf("Setup pRob\n");
+			// printf("Setup pRob\n");
 			// This if statement is a quick-fix. Not sure why pRob is ever equal to
 			// m_robotVector.end() in the first place. It's a rare case that happens
 			// right at the end of the simulator and causes a segfault without this
 			// check
 			if (pRob != m_robotVector.end()) delete *pRob;
-			printf("Deleted pRob\n");
+			// printf("Deleted pRob\n");
 			if(!(id == m_robotVector.size()-1)){
-				printf("remove 0b \n");
+				// printf("remove 0b \n");
 				std::swap(m_robotVector[id], m_robotVector.back()); // check if same ?
-				printf("remove 0c \n");
+				// printf("remove 0c \n");
 			}
 
-			printf("remove 1 \n");
+			// printf("remove 1 \n");
 			m_robotVector.pop_back();
-			printf("remove 2 \n");
+			// printf("remove 2 \n");
 
 		}
-		printf("About to clear m_robotToDestroy\n");
+		// printf("About to clear m_robotToDestroy\n");
 		m_robotToDestroy.clear();
-		printf("Successfully destroyed robot\n");
+		// printf("Successfully destroyed robot\n");
 	}
 }
 
@@ -659,7 +659,7 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 				// Stop trying to regrip if enough time has passed since start of regrip
 				if ((m_elapsedTime - m_robotVector[i]->m_regrip_start_time) >= m_robotVector[i]-> m_regrip_duration) {
 					// std::cout << "m_elapsedTime: " m_elapsedTime << " "
-					std::cout << "Ending regrip attempt from " << m_robotVector[i]->getId() << std::endl;
+					// std::cout << "Ending regrip attempt from " << m_robotVector[i]->getId() << std::endl;
 					m_robotVector[i]->m_regrip_state = false;
 					new_speed = m_robotVector[i]->m_speed_before_regrip;
 					m_robotVector[i]->m_last_regrip_attempt = m_elapsedTime;
@@ -937,8 +937,8 @@ bool RobotController::robotPushing(Robot& r){
 
 bool RobotController::robotStacking(Robot* r, float posX){
 	float x=r->getBody()->GetPosition().x;
-	// if(x < (m_robotParam.body_length + posX)){
-	if(x<0.0){
+	if(x < (m_robotParam.body_length + posX)){
+	// if(x<0.0){
 		return true;
 	}
 	return false;

@@ -158,12 +158,12 @@ struct compare
     }
 };
 
-bool Demo::robotsMovingRight(){
-	// printf("--robotsMovingRight-----\n");
-	bool robotsmovingright = true;
-	double deltaXThreshold = m_config.robot.body_length;
+void Demo::updateRobotPositionsForMovementCheck() {
+	// Populate previous x positions with previous x positions
+	if (!m_currPositionsX.empty()) {
+		m_prevPositionsX = m_currPositionsX;
+	}
 	// Populate current x positions
-	// printf("Getting current robot positions\n");
 	m_currPositionsX.clear();
 	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
 	{
@@ -171,6 +171,21 @@ bool Demo::robotsMovingRight(){
 		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
 		// printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
 	}
+}
+
+bool Demo::robotsMovingRight(){
+	// printf("--robotsMovingRight-----\n");
+	bool robotsmovingright = true;
+	double deltaXThreshold = m_config.robot.body_length;
+	// Populate current x positions
+	// printf("Getting current robot positions\n");
+	// m_currPositionsX.clear();
+	// for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
+	// {
+	// 	Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
+	// 	m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
+	// 	// printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
+	// }
 	// Compare x positions to previous x positions to
 	// see if robots are moving right
 	bool currentRobotsMovingRight = true;
@@ -233,7 +248,7 @@ bool Demo::robotsMovingRight(){
 	}
 	// printf("robotsmovingright %d\n", robotsmovingright);
 	// Update the positions
-	m_prevPositionsX = m_currPositionsX;
+	// m_prevPositionsX = m_currPositionsX;
 	// printf("--end-----\n");
 
 	return robotsmovingright;
@@ -273,6 +288,7 @@ void Demo::demoLoop(){
 				if (m_config.robot.dynamic_speed) {
 					m_robotController.calculateSpeedsToGoal(m_terrain->getPosGoal(), m_elapsedTime, "!dissolution");
 				}
+				// std::cout << m_stacking << std::endl;
 
 				// Check if any robot has gotten up beyond the window
 				if(!addRobot()){
@@ -383,11 +399,12 @@ void Demo::demoLoop(){
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
 		if (m_elapsedTime >= m_timexPosCheck + 10.0){
 			// Update the value for whether robots are stuck
-			// if (!robotsMovingRight())
-			// {
-			// 	std::cout << "Simulation is stuck" << std::endl;
-			// 	m_simulationStuck = true;
-			// }
+			if (!robotsMovingRight())
+			{
+				std::cout << "Simulation is stuck" << std::endl;
+				m_simulationStuck = true;
+			}
+			updateRobotPositionsForMovementCheck();
 			m_timexPosCheck = m_elapsedTime;
 		}
 

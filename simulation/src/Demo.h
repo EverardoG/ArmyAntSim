@@ -154,6 +154,8 @@ public:
 	 */
 	void writeBridgeFile();
 
+	void updateRobotPositionsForMovementCheck();
+
 	bool robotsMovingRight();
 
 private:
