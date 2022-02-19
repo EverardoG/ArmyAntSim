@@ -28,6 +28,8 @@
 #include "Vterrain.h"
 #include "IslandTerrain.h"
 #include "PitTerrain.h"
+#include "TerraceTerrain.h"
+#include "StepDownTerrain.h"
 #include "DefaultTerrain.h"
 #include <iostream>
 #include <fstream>

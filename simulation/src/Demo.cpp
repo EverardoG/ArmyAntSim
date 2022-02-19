@@ -82,6 +82,12 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "pit") {
 		m_terrain = new PitTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
 	}
+	else if (m_config.terrain.type == "terrace") {
+		m_terrain = new TerraceTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
+	}
+	else if (m_config.terrain.type == "step_down") {
+		m_terrain = new StepDownTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
+	}
 	else if (m_config.terrain.type == "flat") {
 		m_terrain = new FlatTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length );
 	}

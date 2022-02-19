@@ -678,14 +678,14 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.25
 					&& m_robotVector[i]->getSpeed() != 0.0
 					&& (m_elapsedTime - m_robotVector[i]->m_last_regrip_attempt) > m_robotVector[i]->m_regrip_retry_delay) {
-					std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
-								" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
-								" | Current time: " << m_elapsedTime <<
-								" | Diff x: " << abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) <<
-								" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) <<
-								" | m_robotVector[i]->getSpeed()" << m_robotVector[i]->getSpeed() <<
-								" | m_elapsedTime: " << m_elapsedTime <<
-								std::endl;
+					// std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
+					// 			" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
+					// 			" | Current time: " << m_elapsedTime <<
+					// 			" | Diff x: " << abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) <<
+					// 			" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) <<
+					// 			" | m_robotVector[i]->getSpeed()" << m_robotVector[i]->getSpeed() <<
+					// 			" | m_elapsedTime: " << m_elapsedTime <<
+					// 			std::endl;
 					// Grab speed before regrip state
 					m_robotVector[i]->m_speed_before_regrip = new_speed;
 					// Set speed to be slow in opposite direction
@@ -748,9 +748,9 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
 			if (m_robotVector[i]->getId() == 5 || m_robotVector[i]->getId() == 15) {
-				std::cout << "Actual speed " << m_robotVector[i]->getSpeed() <<
-				" | Id: " << m_robotVector[i]->getId() <<
-				" | m_elapsedTime " << m_elapsedTime << std::endl;
+				// std::cout << "Actual speed " << m_robotVector[i]->getSpeed() <<
+				// " | Id: " << m_robotVector[i]->getId() <<
+				// " | m_elapsedTime " << m_elapsedTime << std::endl;
 			}
 		}
 	}
