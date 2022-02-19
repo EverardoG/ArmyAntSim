@@ -466,7 +466,7 @@ void Demo::demoLoop(){
 					printf("Robots towering.\n");
 				}
 
-				m_robotController.step(m_config.window.WINDOW_X_PX);
+				m_robotController.step(0, m_config.window.WINDOW_X_PX, 0, m_config.window.WINDOW_Y_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
 
@@ -521,7 +521,8 @@ void Demo::demoLoop(){
 
 
 				// std::cout << "Dissolution State" << std::endl;
-				m_robotController.step(m_config.window.WINDOW_X_PX);
+				m_robotController.step(0, m_config.window.WINDOW_X_PX, 0, m_config.window.WINDOW_Y_PX);
+				// left_x, right_x, top_y, bottom_y
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
 				// printf("Finished removing robot\n");

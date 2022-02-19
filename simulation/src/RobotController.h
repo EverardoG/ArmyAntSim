@@ -173,7 +173,7 @@ public:
 	 * @param 	end_x corresponds to the end of the world
 	 * @param	id is the unique id of the robot, can be obtained with robot.getID()
 	 */
-	void robotOut(double end_x, int id);
+	void robotOut(int left_x, int right_x, int top_y, int bottom_y, int id);
 
 	/**
 	 * Determine if a robot is pushing after the pushing delay has been reached
@@ -232,7 +232,7 @@ public:
 	 * 			it generally correspond to the end of the window.
 	 * 			above this position the robot is destroyed.
 	 */
-	void step(double end_x);
+	void step(int left_x, int right_x, int top_y, int bottom_y);
 
 	/**
 	 * Handle the waiting delay of the robots by decreasing it at each world step.

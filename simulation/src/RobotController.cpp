@@ -428,13 +428,21 @@ void RobotController::removeRobot(){
 	}
 }
 
-void RobotController::robotOut(double end_x, int id){
-	int pos = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
-	// std::cout << "pos: " << pos << " | end_x: " << end_x << std::endl;
-	if(pos > end_x){
-		// std::cout << "Planning to delete Robot " << id << std::endl;
+void RobotController::robotOut(int left_x, int right_x, int top_y, int bottom_y, int id){
+// 	int pos = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
+// 	// std::cout << "pos: " << pos << " | end_x: " << end_x << std::endl;
+// 	if(pos > end_x){
+// 		// std::cout << "Planning to delete Robot " << id << std::endl;
+// 		m_robotToDestroy.push_back(id);
+// //		removeRobot(id);
+// 	}
+
+	// Remove the robot if it is out of bounds of the simulation
+	int pos_x = (m_robotVector[id]->getBody()->GetWorldCenter()).x * m_M_TO_PX;
+	int pos_y = (m_robotVector[id]->getBody()->GetWorldCenter()).y * m_M_TO_PX;
+
+	if (pos_x < left_x || pos_x > right_x || pos_y < top_y || pos_y > bottom_y) {
 		m_robotToDestroy.push_back(id);
-//		removeRobot(id);
 	}
 }
 
@@ -827,7 +835,7 @@ bool RobotController::checkTowering(){
 	return false;
 }
 
-void RobotController::step(double end_x){
+void RobotController::step(int left_x, int right_x, int top_y, int bottom_y){
 
 	// TODO: Add in built-in counting for robots that reached the goal
 
@@ -889,7 +897,8 @@ void RobotController::step(double end_x){
 	    	}
 	    }
 //	    m_robot[i].drawJoint(window);
-		robotOut(end_x, i);
+		// Remove any robot that has gone out of bounds of the simulator
+		robotOut(left_x, right_x, top_y, bottom_y, i);
 //	    printf(joint);
 	}
 	m_currentIt ++;

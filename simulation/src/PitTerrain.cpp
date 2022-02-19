@@ -35,7 +35,8 @@ void PitTerrain::createBody(b2World* world){
 	// Define points for L (left) platform
 	Point leftPointL = b2Vec2(leftx, m_posY);
 	Point rightPointL = b2Vec2(midx - pit_width/2, m_posY);
-	Point rightbottomPointL = b2Vec2(midx - pit_width/2, m_windowSize.y * m_M_TO_PX);
+	// std::cout << "m_windowSize.y: " << m_windowSize.y << " | m_M_TO_PX: " << m_M_TO_PX << " | m_windowSize.y/m_M_TO_PX: " << m_windowSize.y/m_M_TO_PX << std::endl;
+	Point rightbottomPointL = b2Vec2(midx - pit_width/2, m_windowSize.y/m_M_TO_PX + 1);
 	// Create left platform polygon
 	Polygon polygonL{
 		leftPointL,
@@ -46,7 +47,7 @@ void PitTerrain::createBody(b2World* world){
 	allPolygons.emplace_back(polygonL);
 
 	// Define points for R (right) platform
-	Point leftbottomPointR = b2Vec2(midx + pit_width/2, m_windowSize.y/m_M_TO_PX);
+	Point leftbottomPointR = b2Vec2(midx + pit_width/2, m_windowSize.y/m_M_TO_PX + 1);
 	Point leftPointR = b2Vec2(midx + pit_width/2, m_posY);
 	Point rightPointR = b2Vec2(m_windowSize.x/m_M_TO_PX, m_posY);
 	// Create right polygon
