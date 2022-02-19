@@ -163,6 +163,10 @@ void Demo::updateRobotPositionsForMovementCheck() {
 	if (!m_currPositionsX.empty()) {
 		m_prevPositionsX = m_currPositionsX;
 	}
+	// Populate previous y positions with previous y positions
+	if (!m_currPositionsY.empty()) {
+		m_prevPositionsY = m_currPositionsY;
+	}
 	// Populate current x positions
 	m_currPositionsX.clear();
 	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
@@ -171,21 +175,39 @@ void Demo::updateRobotPositionsForMovementCheck() {
 		m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
 		// printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
 	}
+	// Populate current y positions
+	m_currPositionsY.clear();
+	for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
+	{
+		Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
+		m_currPositionsY[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().y;
+		// printf("Robot %d at %f\n", num_robot, m_currPositionsY[temp_robot_ptr->getId()]);
+	}
+}
+
+bool Demo::robotDespawnedSinceLastCheck() {
+	// Determine if any robots have despawned since the last check
+	// If a robot despawned, that means it made it all the way off-screen
+	// printf("Determining if robot despawned...\n");
+	// printf("%ld previous robots found.\n", m_prevPositionsX.size());
+	bool robotDespawned = false;
+	for (std::pair<int, double> id_and_x : m_prevPositionsX)
+	{
+		// printf("  Previous robot:\n");
+		int id = id_and_x.first;
+		// printf("    id: %d\n", id);
+		if (!m_currPositionsX.contains(id))
+		{
+			robotDespawned = true;
+		}
+	}
+	return robotDespawned;
 }
 
 bool Demo::robotsMovingRight(){
 	// printf("--robotsMovingRight-----\n");
 	bool robotsmovingright = true;
 	double deltaXThreshold = m_config.robot.body_length;
-	// Populate current x positions
-	// printf("Getting current robot positions\n");
-	// m_currPositionsX.clear();
-	// for (int num_robot = 0; num_robot < m_robotController.getNbActiveRobots(); num_robot++)
-	// {
-	// 	Robot* temp_robot_ptr = m_robotController.getRobot(num_robot);
-	// 	m_currPositionsX[temp_robot_ptr->getId()] = temp_robot_ptr->getPosition().x;
-	// 	// printf("Robot %d at %f\n", num_robot, m_currPositionsX[temp_robot_ptr->getId()]);
-	// }
 	// Compare x positions to previous x positions to
 	// see if robots are moving right
 	bool currentRobotsMovingRight = true;
@@ -194,7 +216,6 @@ bool Demo::robotsMovingRight(){
 	if (!m_prevPositionsX.empty())
 	{
 		// printf("Previous positions was not empty\n");
-
 		// Compare current x positions againts previous x positions
 		for (std::pair<int, double> id_and_x : m_currPositionsX)
 		{
@@ -214,7 +235,6 @@ bool Demo::robotsMovingRight(){
 			if (deltaX > deltaXThreshold)
 			{
 				greaterThanThreshold = true;
-				// robotsMovingRightByThreshold = true;
 			}
 		}
 		if (!greaterThanThreshold)
@@ -223,36 +243,180 @@ bool Demo::robotsMovingRight(){
 		}
 	}
 	// printf("robotsMovingRightByThreshold %d\n", robotsMovingRightByThreshold);
-	// Determine if any robots have despawned since the last check
-	// If a robot despawned, that means it made it all the way to the right
-	// meaning it would have a positive deltaX
-	// printf("Determining if robot despawned...\n");
-	// printf("%ld previous robots found.\n", m_prevPositionsX.size());
-	bool robotDespawned = false;
-	for (std::pair<int, double> id_and_x : m_prevPositionsX)
-	{
-		// printf("  Previous robot:\n");
-		int id = id_and_x.first;
-		// printf("    id: %d\n", id);
-		if (!m_currPositionsX.contains(id))
-		{
-			robotDespawned = true;
-		}
-	}
+
 	// printf("robotDespawned %d\n", robotDespawned);
 	// If not current robots have moved right AND no robots have despawned since
 	// the last check, then the robots are NOT moving right
-	if (!robotsMovingRightByThreshold && !robotDespawned)
+	if (!robotsMovingRightByThreshold)
 	{
 		robotsmovingright = false;
 	}
 	// printf("robotsmovingright %d\n", robotsmovingright);
-	// Update the positions
-	// m_prevPositionsX = m_currPositionsX;
 	// printf("--end-----\n");
 
 	return robotsmovingright;
 }
+
+bool Demo::robotsMovingLeft(){
+	bool robotsmovingleft = true;
+	double deltaXThreshold = - m_config.robot.body_length;
+	// Compare x positions to previous x positions to
+	// see if robots are moving left
+	bool currentRobotsMovingLeft = true;
+	bool robotsMovingLeftByThreshold = true;
+	std::vector<double> deltaXs;
+	if (!m_prevPositionsX.empty())
+	{
+		// printf("Previous positions was not empty\n");
+		// Compare current x positions againts previous x positions
+		for (std::pair<int, double> id_and_x : m_currPositionsX)
+		{
+			int id = id_and_x.first;
+			double x = id_and_x.second;
+			if (m_prevPositionsX.contains(id))
+			{
+				double currX = m_currPositionsX[id];
+				double prevX = m_prevPositionsX[id];
+				deltaXs.push_back(currX - prevX);
+			}
+		}
+		// Determine if no robots are moving to the left at least one body length
+		bool greaterThanThreshold = false;
+		for (double deltaX  : deltaXs)
+		{
+			if (deltaX < deltaXThreshold)
+			{
+				greaterThanThreshold = true;
+			}
+		}
+		if (!greaterThanThreshold)
+		{
+			robotsMovingLeftByThreshold = false;
+		}
+	}
+	// printf("robotDespawned %d\n", robotDespawned);
+	// If not current robots have moved left since
+	// the last check, then the robots are NOT moving left
+	if (!robotsMovingLeftByThreshold)
+	{
+		robotsmovingleft = false;
+	}
+	// printf("--end-----\n");
+
+	return robotsmovingleft;
+}
+
+bool Demo::robotsMovingUp(){
+	bool robotsmovingup = true;
+	double deltaYThreshold = - m_config.robot.body_length;
+	// Compare y positions to previous y positions to
+	// see if robots are moving up
+	bool currentRobotsMovingUp = true;
+	bool robotsMovingUpByThreshold = true;
+	std::vector<double> deltaYs;
+	if (!m_prevPositionsY.empty())
+	{
+		// printf("Previous positions was not empty\n");
+		// Compare current y positions againts previous y positions
+		for (std::pair<int, double> id_and_y : m_currPositionsY)
+		{
+			int id = id_and_y.first;
+			double y = id_and_y.second;
+			if (m_prevPositionsY.contains(id))
+			{
+				double currY = m_currPositionsY[id];
+				double prevY = m_prevPositionsY[id];
+				deltaYs.push_back(currY - prevY);
+			}
+		}
+		// Determine if no robots are moving to up at least one body length
+		bool greaterThanThreshold = false;
+		for (double deltaY  : deltaYs)
+		{
+			// A more negative y value indicates the robot is moving up
+			if (deltaY < deltaYThreshold)
+			{
+				greaterThanThreshold = true;
+			}
+		}
+		if (!greaterThanThreshold)
+		{
+			robotsMovingUpByThreshold = false;
+		}
+	}
+	// printf("robotDespawned %d\n", robotDespawned);
+	// If not current robots have moved up since
+	// the last check, then the robots are NOT moving up
+	if (!robotsMovingUpByThreshold)
+	{
+		robotsmovingup = false;
+	}
+	// printf("--end-----\n");
+
+	return robotsmovingup;
+}
+
+bool Demo::robotsMovingDown(){
+	bool robotsmovingdown = true;
+	double deltaYThreshold = m_config.robot.body_length;
+	// Compare y positions to previous y positions to
+	// see if robots are moving down
+	bool currentRobotsMovingDown = true;
+	bool robotsMovingDownByThreshold = true;
+	std::vector<double> deltaYs;
+	if (!m_prevPositionsY.empty())
+	{
+		// printf("Previous positions was not empty\n");
+		// Compare current y positions againts previous y positions
+		for (std::pair<int, double> id_and_y : m_currPositionsY)
+		{
+			int id = id_and_y.first;
+			double y = id_and_y.second;
+			if (m_prevPositionsY.contains(id))
+			{
+				double currY = m_currPositionsY[id];
+				double prevY = m_prevPositionsY[id];
+				deltaYs.push_back(currY - prevY);
+			}
+		}
+		// Determine if no robots are moving down at least one body length
+		bool greaterThanThreshold = false;
+		for (double deltaY  : deltaYs)
+		{
+			// A more positive y value indicates the robot is moving down
+			if (deltaY > deltaYThreshold)
+			{
+				greaterThanThreshold = true;
+			}
+		}
+		if (!greaterThanThreshold)
+		{
+			robotsMovingDownByThreshold = false;
+		}
+	}
+	// printf("robotDespawned %d\n", robotDespawned);
+	// If not current robots have moved down since
+	// the last check, then the robots are NOT moving down
+	if (!robotsMovingDownByThreshold)
+	{
+		robotsmovingdown = false;
+	}
+	// printf("--end-----\n");
+
+	return robotsmovingdown;
+}
+
+bool Demo::robotsMoving() {
+	if (robotDespawnedSinceLastCheck()
+	|| robotsMovingRight()
+	|| robotsMovingLeft()
+	|| robotsMovingUp()
+	|| robotsMovingDown()) {
+		return true;
+	}
+	return false;
+}
+
 
 //Main demoLoop called in the main file: The demoLoop is structured in two cases: if the visualization is activated or not.
 // Both cases are then almost identical apart from the simulation part.
@@ -399,7 +563,7 @@ void Demo::demoLoop(){
 		// printf("m_elapsedTime: %f | m_timexPosCheck: %f\n", m_elapsedTime, m_timexPosCheck);
 		if (m_elapsedTime >= m_timexPosCheck + 10.0){
 			// Update the value for whether robots are stuck
-			if (!robotsMovingRight())
+			if (!robotsMoving())
 			{
 				std::cout << "Simulation is stuck" << std::endl;
 				m_simulationStuck = true;

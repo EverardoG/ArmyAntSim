@@ -156,7 +156,17 @@ public:
 
 	void updateRobotPositionsForMovementCheck();
 
+	bool robotDespawnedSinceLastCheck();
+
 	bool robotsMovingRight();
+
+	bool robotsMovingLeft();
+
+	bool robotsMovingDown();
+
+	bool robotsMovingUp();
+
+	bool robotsMoving();
 
 private:
 	sf::RenderWindow window; //SFML window used to display the simulation
@@ -218,6 +228,9 @@ private:
 
 	std::unordered_map<int, double> m_prevPositionsX;
 	std::unordered_map<int, double> m_currPositionsX;
+
+	std::unordered_map<int, double> m_prevPositionsY;
+	std::unordered_map<int, double> m_currPositionsY;
 
 	// std::vector<Robot> m_currentRobotSnapshot;
 	// std::vector<Robot> m_prevRobotSnapshot;
