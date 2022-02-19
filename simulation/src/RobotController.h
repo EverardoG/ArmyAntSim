@@ -297,8 +297,8 @@ private:
 
 	// Distributions for random goal perturbation
 	std::default_random_engine generator;
-	std::normal_distribution<float> n_distribution = std::normal_distribution<float>(0.0, m_controllerParam.sigma);
-	std::uniform_real_distribution<float> u_distribution = std::uniform_real_distribution<float>(0.0, 2*PI);
+	std::normal_distribution<float> n_distribution;
+	std::uniform_real_distribution<float> u_distribution;
 };
 
 #endif /* ROBOTCONTROLLER_H_ */

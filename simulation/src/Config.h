@@ -71,6 +71,7 @@ struct sController{
 	float param5;
 	float sigma;
 	std::string control_policy;
+	unsigned long random_seed;
 };
 
 struct sRobot{

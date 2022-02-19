@@ -50,7 +50,9 @@ void RobotController::create(config::sController controllerParam, config::sRobot
 	m_terrainBody = terrain;
 	m_posGoal = posGoal;
 	std::cout << "initial sigma: " << m_controllerParam.sigma << std::endl;
+	generator.seed(controllerParam.random_seed);
 	n_distribution = std::normal_distribution<float>(0.0, m_controllerParam.sigma);
+	u_distribution = std::uniform_real_distribution<float>(0.0, 2*PI);
 }
 
 RobotController::~RobotController() {
