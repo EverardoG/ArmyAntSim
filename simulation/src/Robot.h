@@ -296,10 +296,11 @@ public:
 	float m_pos_update_time = 1; // Update the last position every __ seconds
 	float m_last_position_time_update = 0; // Last time that last_position was updated
 	float m_regrip_duration = 0.5; /// Time in seconds that a regrip attempt should last
-	float m_regrip_delay = 1; // Time before trying another regrip
 	bool m_regrip_state = false; // Robot is attempting to regrip
 	float m_regrip_start_time = 0.0;
 	float m_speed_before_regrip = 0.0;
+	float m_regrip_retry_delay = 1; // Time before trying another regrip
+	float m_last_regrip_attempt = 0.0; // End of the last time the robot attempted a regrip
 
 	/**
 	 * Pointers on the two possible gripping joints

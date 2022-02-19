@@ -196,18 +196,20 @@ void RobotController::findContactRobots(b2Contact* contact){
 		if(abs(angleA) > m_controllerParam.angle_limit && abs(angleB) > m_controllerParam.angle_limit){
 			// If two robots make contact and can grip, then whichever robot is on the bottom goes into bridge state
 			// Robot A is on top
-			if (rA->getPosition().y < rB->getPosition().y) {
+			if (rA->getPosition().y < rB->getPosition().y && rA->getState() != BRIDGE) {
 				// Robot A grips and robot B goes into bridge state
 				rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 				rA->setContact(true);
+				// setRobotState(*rA, WALK);
 				setRobotState(*rB, BRIDGE);
 			}
 			// Robot B is on top
-			else {
+			else if (rB->getPosition().y < rA->getPosition().y && rB->getState() != BRIDGE) {
 				// Robot B grips and robot A goes into bridge state
 				rB->gripSide(contact, bodyContactA, m_M_TO_PX);
 				rB->setContact(true);
-				setRobotState(*rB, BRIDGE);
+				setRobotState(*rA, BRIDGE);
+				// setRobotState(*rB, WALK);
 			}
 			// rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 			// rA->setContact(true);
@@ -216,23 +218,23 @@ void RobotController::findContactRobots(b2Contact* contact){
 			// setRobotState(*rA, BRIDGE);
 			// setRobotState(*rB, BRIDGE); //TODO becareful changed rule
 		}
-		else if(abs(angleA) > m_controllerParam.angle_limit){
+		else if(abs(angleA) > m_controllerParam.angle_limit && rA->getState() != BRIDGE){
 			rA->gripSide(contact, bodyContactB, m_M_TO_PX);
 			rA->setContact(true);
-			setRobotState(*rA, WALK); //WALK
+			// setRobotState(*rA, WALK); //WALK
 			setRobotState(*rB, BRIDGE); //TODO becareful changed rule
 		}
 
-		else if(abs(angleB) > m_controllerParam.angle_limit){
+		else if(abs(angleB) > m_controllerParam.angle_limit && rB->getState() != BRIDGE){
 			rB->gripSide(contact, bodyContactA, m_M_TO_PX);
 			rB->setContact(true);
 			setRobotState(*rA, BRIDGE);
-			setRobotState(*rB, WALK); //WALK
+			// setRobotState(*rB, WALK); //WALK
 		}
 
 	}
 
-	else if (contactorB){
+	else if (contactorB && rB->getState() != BRIDGE){
 		// std::cout << "B" << std::endl;
 
 		double angleB = rB->getBody()->GetAngle() - rB->m_referenceAngle;
@@ -247,7 +249,7 @@ void RobotController::findContactRobots(b2Contact* contact){
 		// }
 	}
 
-	else if (contactorA){
+	else if (contactorA && rA->getState() != BRIDGE){
 		// std::cout << "A" << std::endl;
 
 		double angleA = rA->getBody()->GetAngle() - rA->m_referenceAngle;
@@ -315,6 +317,7 @@ void RobotController::setRobotState(Robot& robot, e_state robotState){
 //				robot.blockMotorRotation(LEFT);
 //				robot.blockMotorRotation(RIGHT);
 
+				// TODO: DONT HARDCODE THIS!!!
 				float motor_limit_deg = 5;
 				robot.limitMotorRotation(LEFT, motor_limit_deg/RAD_TO_DEG);
 				robot.limitMotorRotation(RIGHT, motor_limit_deg/RAD_TO_DEG);
@@ -370,7 +373,7 @@ void RobotController::createGripRobots(Robot& robot){
 }
 
 void RobotController::wait_delay(Robot& robot){
-	if (robot.getDelay()==0 && (!robot.isMoving())){
+	if (robot.getDelay()==0){// && (!robot.isMoving())){
 		robot.m_ready = true;
 	}
 
@@ -657,6 +660,7 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					std::cout << "Ending regrip attempt from " << m_robotVector[i]->getId() << std::endl;
 					m_robotVector[i]->m_regrip_state = false;
 					new_speed = m_robotVector[i]->m_speed_before_regrip;
+					m_robotVector[i]->m_last_regrip_attempt = m_elapsedTime;
 				}
 				// Update last position and time
 				m_robotVector[i]->m_last_position = m_robotVector[i]->getPosition();
@@ -672,13 +676,15 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 				// Check if robot is stuck and initiate a regrip
 				if ( abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) < 0.25
 					&& abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) < 0.25
-					&& m_robotVector[i]->getSpeed() != 0.0) {
+					&& m_robotVector[i]->getSpeed() != 0.0
+					&& (m_elapsedTime - m_robotVector[i]->m_last_regrip_attempt) > m_robotVector[i]->m_regrip_retry_delay) {
 					std::cout << "Initiating regrip | Id: " << m_robotVector[i]->getId() <<
 								" | Last time: " << m_robotVector[i]->m_last_position_time_update <<
 								" | Current time: " << m_elapsedTime <<
 								" | Diff x: " << abs(m_robotVector[i]->m_last_position.x - m_robotVector[i]->getPosition().x) <<
 								" | Diff y: " << abs(m_robotVector[i]->m_last_position.y - m_robotVector[i]->getPosition().y) <<
 								" | m_robotVector[i]->getSpeed()" << m_robotVector[i]->getSpeed() <<
+								" | m_elapsedTime: " << m_elapsedTime <<
 								std::endl;
 					// Grab speed before regrip state
 					m_robotVector[i]->m_speed_before_regrip = new_speed;
@@ -729,13 +735,22 @@ void RobotController::calculateSpeedsToGoal(b2Vec2 m_goal_pos, float m_elapsedTi
 					m_robotVector[i]->m_last_position_time_update = m_elapsedTime;
 				}
 				if (m_robotVector[i]->getId() == 12){
-					std::cout << "new_speed: " << new_speed << " | Id: " << m_robotVector[i]->getId() << std::endl;
+					// std::cout << "new_speed: " << new_speed << " | Id: " << m_robotVector[i]->getId() << std::endl;
 				}
+			}
+			// Enfore speed limits
+			if (new_speed > m_robotParam.speed) {
+				new_speed = m_robotParam.speed;
+			}
+			else if (new_speed < -m_robotParam.speed) {
+				new_speed = m_robotParam.speed;
 			}
 			// Actually set the robot to the new speed
 			m_robotVector[i]->setSpeed(new_speed);
-			if (m_robotVector[i]->getId() == 12) {
-				std::cout << "Actual speed " << m_robotVector[i]->getSpeed() << " | Id: " << m_robotVector[i]->getId() << std::endl;
+			if (m_robotVector[i]->getId() == 5 || m_robotVector[i]->getId() == 15) {
+				std::cout << "Actual speed " << m_robotVector[i]->getSpeed() <<
+				" | Id: " << m_robotVector[i]->getId() <<
+				" | m_elapsedTime " << m_elapsedTime << std::endl;
 			}
 		}
 	}
@@ -844,17 +859,17 @@ void RobotController::step(double end_x){
 		    m_robotVector[i]->m_ready=false;
 //		    m_robotVector[i]->m_pushing_delay = - int(m_controllerParam.time_before_pushing*FPS+(m_currentIt-m_robotVector[i]->m_age)/600);
 
-			    m_robotVector[i]->setState(WALK);
-			    m_robotVector[i]->m_bridgeAge = 0;
+			m_robotVector[i]->setState(WALK);
+			m_robotVector[i]->m_bridgeAge = 0;
 
-			    m_robotVector[i]->m_moving=true;
-			    if (m_robotVector[i]->checkGripp(m_robotVector[i]->m_movingSide)){
-				    invertMovingWheel(*m_robotVector[i]);
-			    }
-			    // else{
-				    // printf("\n wrong moving wheel \n");}
-			    destroyJoints(*m_robotVector[i], m_robotVector[i]->m_movingSide);
-			    m_robotVector[i]->moveBodyWithMotor();
+			m_robotVector[i]->m_moving=true;
+			if (m_robotVector[i]->checkGripp(m_robotVector[i]->m_movingSide)){
+				invertMovingWheel(*m_robotVector[i]);
+			}
+			// else{
+				// printf("\n wrong moving wheel \n");}
+			destroyJoints(*m_robotVector[i], m_robotVector[i]->m_movingSide);
+			m_robotVector[i]->moveBodyWithMotor();
 //	    	}
 	    }
 
