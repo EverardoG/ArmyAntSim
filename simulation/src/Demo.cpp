@@ -465,8 +465,9 @@ void Demo::demoLoop(){
 					m_towering = true;
 					printf("Robots towering.\n");
 				}
-
-				m_robotController.step(0, m_config.window.WINDOW_X_PX, 0, m_config.window.WINDOW_Y_PX);
+				// -5 for top y so robotcontroller can identify if robots are towering
+				// rather than delete the robot that is towering.
+				m_robotController.step(0, m_config.window.WINDOW_X_PX, -5, m_config.window.WINDOW_Y_PX);
 				m_world->Step(1.f/60.f, 100, 100);
 				m_robotController.removeRobot();
 
@@ -483,7 +484,7 @@ void Demo::demoLoop(){
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
-					takeScreenshot();
+					// takeScreenshot();
 				}
 
 				m_elapsedTime += 1.f/FPS;
@@ -505,11 +506,6 @@ void Demo::demoLoop(){
 				// 	m_timexPosCheck = m_elapsedTime;
 				// 	m_avg_x_pos = m_robotController.getAvgPos().x;
 				// }
-
-				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
-				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
-					m_tooLongDissolution;
-				}
 
 				break;
 
@@ -535,15 +531,15 @@ void Demo::demoLoop(){
 				}
 
 				// if (m_elapsedTime > 790) printf("About to write bridge file\n");
-				// writeBridgeFile();
+				writeBridgeFile();
 				// if (m_elapsedTime > 790) printf("successfully wrote bridge file\n");
 
-				// m_robotController.isBridgeDissolved();
+				m_robotController.isBridgeDissolved();
 				// if (m_elapsedTime > 790) printf("Checked if bridge is dissolved\n");
 
 				// Save a screenshot every 600 iteration, ie every 10 s of real-time at 60 FPS
 				if(m_currentIt % 600 == 0){
-					takeScreenshot();
+					// takeScreenshot();
 				}
 
 				m_elapsedTime += 1.f/FPS;
@@ -551,8 +547,10 @@ void Demo::demoLoop(){
 
 				// if (m_elapsedTime > 790) printf("Updated timers\n");
 				// Flag the simulation if it's taking too long to dissolve (10800 s = 3 hrs)
-				if (m_elapsedTime - m_elapsedTimeBridgeInitial > 10800) {
-					m_tooLongDissolution;
+				// std::cout << "max_dissolution_time: " << m_config.simulation.max_dissolution_time << " | m_elapsedTime - m_elapsedTimeBridgeFinal : " << m_elapsedTime - m_elapsedTimeBridgeFinal << std::endl;
+				if (m_config.simulation.max_dissolution_time > 0 && (m_elapsedTime - m_elapsedTimeBridgeFinal) > m_config.simulation.max_dissolution_time) {
+					// std::cout << "m_tooLongDissolution" << std::endl;
+					m_tooLongDissolution = true;
 				}
 
 				break;
@@ -609,7 +607,7 @@ void Demo::demoLoop(){
 
 				// Store bridge characteristics
 				m_length_final = getNewPathLength();
-	      m_height_final = getBridgeHeight();
+	     		m_height_final = getBridgeHeight();
 
 				// Set robots to use fixed speeds if they were previously using dynamic speeds
 				// TODO: dont update speeds if a robot is in its regrip state
@@ -633,6 +631,7 @@ void Demo::demoLoop(){
 				std::cout << "---------------------------------------" << std::endl;
 			}
 			// End the simulation early if robots are stacking or robots are stuck
+			// std::cout << m_stacking << " | " << m_simulationStuck << " | " << m_tooLongDissolution << " | " << m_towering << std::endl;
 			if (m_stacking || m_simulationStuck || m_tooLongDissolution || m_towering){
 				takeScreenshot();
 				state = SimulationState::End;
@@ -747,7 +746,7 @@ bool Demo::addRobotWithDelay(){
 				else{
 					m_config.simulation.robot_phase = moduloAngle(m_robotController.getRobot(0)->getAngle(), PI);
 				}
-				takeScreenshot();
+				// takeScreenshot();
 			}
 		}
 		else{
@@ -967,6 +966,7 @@ void Demo::writeResultFile(){
 	m_logFile << "	Movement bridge_duration before the robot is considered to push: "<< std::to_string(m_config.controller.time_before_pushing) << " s\n";
 	m_logFile << "	Max robot in the window: "<< std::to_string(m_config.controller.max_robot_window) << " s\n";
 	m_logFile << "	Stability condition: "<< std::to_string(m_config.controller.stability_condition) << " s\n\n";
+	m_logFile << "  Random Seed: " << std::to_string(m_config.controller.random_seed) << "\n\n\n";
 
 	/** Controller parameters */
 	m_logFile << "Robot parameters: \n";

@@ -53,6 +53,7 @@ struct sSimulation{
 	double bridge_duration;
 	double dissolution_duration;
 	bool visualization;
+	double max_dissolution_time;
 };
 
 struct sController{

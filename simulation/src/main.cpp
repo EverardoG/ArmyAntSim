@@ -70,6 +70,11 @@ int main(int argc, char* argv[])
 	ValueArg<bool>        use_delay_arg("","use_delay", "Whether to spawn robots with time delay or distance delay. True: delay, False: distance", false, true, "BOOL bool true");
 	ValueArg<bool>        smart_dissolution_arg("", "smart_dissolution", "Whether to based dissolution off timing or robots reaching the goal. True: Robots reaching goal, False: Time-based dissolution", false, false, "BOOL bool false");
 	ValueArg<bool>        gaussian_delay_arg("", "gaussian_delay", "Whether to make time delay a guassian distribution or the same for each robot. True: Gaussian, False: Same for each", false, true, "BOOL bool true");
+	ValueArg<double>	  max_dissolution_time_arg("", "max_dissolution_time", "Maximuming number of seconds to wait for structure to dissolve during dissolution if using smart dissolution mode. Negative number indicates infinite wait time.", false, -1, "DOUBLE double -1");
+	// max dissolution time
+	// max formation time
+	// max travel time
+	// num_travel_robots
 
 	// Create Controller Parameters
 	ValueArg<float> angle_limit_arg("a", "limit_angle", "Minimum angle before robot is allowed to grab", false, PI/2, "RAD float PI/2");
@@ -115,6 +120,7 @@ int main(int argc, char* argv[])
 	cmd.add(gravity_arg);
 	cmd.add(use_delay_arg);
 	cmd.add(gaussian_delay_arg);
+	cmd.add(max_dissolution_time_arg);
 	cmd.add(smart_dissolution_arg);
 	cmd.add(robot_distance_arg);
 	cmd.add(robot_phase_arg);
@@ -188,6 +194,7 @@ int main(int argc, char* argv[])
 	cfg.simulation.bridge_duration = sim_duration_arg.getValue();
 	cfg.simulation.dissolution_duration = dis_duration_arg.getValue();
 	cfg.simulation.visualization = visual_arg.getValue();
+	cfg.simulation.max_dissolution_time = max_dissolution_time_arg.getValue();
 
 	cfg.controller.angle_limit = angle_limit_arg.getValue();
 	cfg.controller.bridge_delay = bridge_delay_arg.getValue();

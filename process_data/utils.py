@@ -151,6 +151,8 @@ def get_robots_from_important_times(bridge_file: Path, finished_travel_timestamp
         lines = fp.readlines()
         final_line = lines[-1]
         final_time = int(final_line.split(";")[0])
+        # for line in lines:
+        #     print(line.split(";")[0])
 
     # Open up the file
     with open(bridge_file) as fp:
@@ -170,6 +172,7 @@ def get_robots_from_important_times(bridge_file: Path, finished_travel_timestamp
                     )
             initial_bridge_robots.append(robot_info)
             line = fp.readline()
+        # print(finished_travel_timestamp)
         # Get the row that has the correct finished_travel_timestamp or a timestamp
         # that comes right before it.
         # closest_finished_travel_timestamp = 0
@@ -282,9 +285,12 @@ def plot_island(ax: plt.Axes):
     ax.plot([15.3, 15.3, 26.52, 26.52, 15.3],[-5.1, -6.12, -6.12, -5.1, -5.1], color="black", linewidth=0.5)
 
 def get_metrics_from_results_file(results_file: Path)->Dict:
-    formation_time = 0.0
-    travel_time = 0.0
-    dissolution_time = 0.0
+    formation_time = None
+    travel_time = None
+    dissolution_time = None
+    num_robots_bridge_final = None
+    num_robots_bridge_initial = None
+    num_robots_bridge_end = None
     with open(results_file) as fp:
         for line in fp:
             splitline = line.split(" ")
@@ -330,12 +336,15 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                         num_robots_bridge_final = int(splitline[-1])
                 elif splitline[-1][:4] == "end:":
                     num_robots_bridge_end = int(splitline[-1][4:-1])
-    if num_robots_bridge_final > 0:
+    if num_robots_bridge_final is not None and num_robots_bridge_final > 0:
         percent_dissolution = 100*(num_robots_bridge_final-num_robots_bridge_end)/num_robots_bridge_final
     else:
         percent_dissolution = None
     num_robots_travelled = 9 # 10 robots total, and travel state is triggered when 1st robot passes goal
-    average_travel_time = travel_time/num_robots_travelled
+    if travel_time is not None:
+        average_travel_time = travel_time/num_robots_travelled
+    else:
+        average_travel_time = None
     # if dissolution_time < 0.0:
     #     print("FOUND ZERO")
     metrics = {
@@ -354,33 +363,63 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
         }
     return metrics
 
-def get_metrics_from_folder(results_folder: Path)->Dict:
-    robots = get_robots_in_initial_bridge(results_folder/"_bridge.txt")
-    com = calculate_COM_from_robots(robots)
-    box = calculate_bounding_box_from_robots(robots)
-    box_width = abs(np.max(box[:,0]) - np.min(box[:,0]))
-    box_height = abs(np.max(box[:,1])- np.min(box[:,1]))
-    cob = calculate_center_of_bounding_box(box)
+def get_metrics_from_folder(results_folder: Path, populate_robots_at_times: bool = True)->Dict:
+    metrics = {
+        "num_robots": None,
+        "bounding_box" : None,
+        "box_width" : None,
+        "box_height" : None,
+        "cob" : None,
+        "com" : None,
+        "lever_ratio_width" : None,
+        "lever_ratio_height" : None,
+        "robots" : None,
+        "formation_time": None,
+        "travel_time": None,
+        "dissolution_time": None,
+        "average_travel_time": None,
+        "m_stacking": None,
+        "m_towering": None,
+        "m_simulationStuck": None,
+        "m_tooLongDissolution": None,
+        "num_robots_bridge_initial": None,
+        "num_robots_bridge_final": None,
+        "num_robots_bridge_end": None,
+        "percent_dissolution": None
+    }
+    if (results_folder/"_bridge.txt").exists():
+        robots = get_robots_in_initial_bridge(results_folder/"_bridge.txt")
+        com = calculate_COM_from_robots(robots)
+        box = calculate_bounding_box_from_robots(robots)
+        box_width = abs(np.max(box[:,0]) - np.min(box[:,0]))
+        box_height = abs(np.max(box[:,1])- np.min(box[:,1]))
+        cob = calculate_center_of_bounding_box(box)
+        com_to_cob = cob - com
+        lever_ratio_width = com_to_cob[0]/(box_width/2)
+        lever_ratio_height = com_to_cob[1]/(box_height/2)
+        metrics["num_robots"] = len(robots)
+        metrics["bounding_box"] = box[0:4]
+        metrics["box_width"] = box_width
+        metrics["box_height"] = box_height
+        metrics["cob"] = cob
+        metrics["com"] = com
+        metrics["lever_ratio_width"] = lever_ratio_width
+        metrics["lever_ratio_heigth"] = lever_ratio_height
+        metrics["robots"] = robots
 
-    results_file_metrics = get_metrics_from_results_file(results_folder/"_result.txt")
+    if (results_folder/"_result.txt").exists():
+        results_file_metrics = get_metrics_from_results_file(results_folder/"_result.txt")
+        metrics.update(results_file_metrics)
+        if results_file_metrics["formation_time"] is not None and results_file_metrics["travel_time"] is not None:
+            travel_time_ends_timestamp = int((results_file_metrics["formation_time"] + results_file_metrics["travel_time"]) * 60)
+            full_sim_timestamp = travel_time_ends_timestamp + int(results_file_metrics["dissolution_time"]*60)
+            if populate_robots_at_times and (results_folder/"_bridge.txt").exists():
+                metrics["robots_at_times"] = get_robots_from_important_times(results_folder/"_bridge.txt", travel_time_ends_timestamp, full_sim_timestamp)
+            else:
+                metrics["robots_at_times"] = None
+        else:
+            metrics["robots_at_times"] = None
 
-    com_to_cob = cob - com
-    lever_ratio_width = com_to_cob[0]/(box_width/2)
-    lever_ratio_height = com_to_cob[1]/(box_height/2)
-
-    metrics = {"num_robots": len(robots),
-            "bounding_box": box[0:4],
-            "box_width": box_width,
-            "box_height": box_height,
-            "cob": cob,
-            "com": com,
-            "lever_ratio_width": lever_ratio_width,
-            "lever_ratio_height": lever_ratio_height,
-            "robots":robots}
-    metrics.update(results_file_metrics)
-    travel_time_ends_timestamp = int((results_file_metrics["formation_time"] + results_file_metrics["travel_time"]) * 60)
-    full_sim_timestamp = travel_time_ends_timestamp + int(results_file_metrics["dissolution_time"]*60)
-    metrics["robots_at_times"] = get_robots_from_important_times(results_folder/"_bridge.txt", travel_time_ends_timestamp, full_sim_timestamp)
     return metrics
 
 def visualize_initial_bridge(results_folder: Path)->None:
@@ -405,7 +444,8 @@ def visualize_initial_bridge(results_folder: Path)->None:
     plt.show()
 
 if __name__ == "__main__":
-    folder_path = Path("/home/egonzalez/data/redo_island_2/sweep_k_0.1_to_20_robot_speed_0_to_5.60/k_1.98_offset_3.83")
+    # folder_path = Path("/home/egonzalez/data/redo_island_2/sweep_k_0.1_to_20_robot_speed_0_to_5.60/k_1.98_offset_3.83")
+    folder_path = Path("/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10/pit_0/0")
     visualize_initial_bridge(folder_path)
     metrics_dict = get_metrics_from_folder(folder_path)
     desired_metrics = ["num_robots", "cob", "com", "formation_time", "dissolution_time", "travel_time", "average_travel_time", "box_width", "box_height", "lever_ratio_width", "lever_ratio_height"]

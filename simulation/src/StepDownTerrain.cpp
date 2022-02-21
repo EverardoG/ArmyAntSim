@@ -29,7 +29,7 @@ void StepDownTerrain::createBody(b2World* world){
 	Point leftPointL = b2Vec2(leftx, m_posY);
 	Point rightPointL = b2Vec2(midx - pit_width/2, m_posY);
 	Point rightbottomPointL = b2Vec2(midx - pit_width/2, m_posY + 1.5*m_bodyLength);
-    Point leftbottomPointL = b2Vec2(leftx, m_posY + 1*m_bodyLength);
+    Point leftbottomPointL = b2Vec2(leftx, m_posY + 1.5*m_bodyLength);
 	// Create left platform polygon
 	Polygon polygonL{
 		leftPointL,
@@ -49,14 +49,17 @@ void StepDownTerrain::createBody(b2World* world){
 
 	// Define points for R (right) platform
     float right_platform_top = m_posY + 5 * m_bodyLength;
-	Point leftbottomPointR = b2Vec2(midx + pit_width/2, right_platform_top+1.5);
+	Point rightbottomPointR = b2Vec2(m_windowSize.x/m_M_TO_PX, m_windowSize.y/m_M_TO_PX);
+	Point leftbottomPointR = b2Vec2(midx + pit_width/2, m_windowSize.y/m_M_TO_PX);
 	Point leftPointR = b2Vec2(midx + pit_width/2, right_platform_top);
 	Point rightPointR = b2Vec2(m_windowSize.x/m_M_TO_PX, right_platform_top);
 	// Create right polygon
 	Polygon polygonR{
 		leftbottomPointR,
 		leftPointR,
-		rightPointR
+		rightPointR,
+		rightbottomPointR,
+		leftbottomPointR
 	};
 	// Add it to all polygons
 	allPolygons.emplace_back(polygonR);
