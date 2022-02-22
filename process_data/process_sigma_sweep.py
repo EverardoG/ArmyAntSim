@@ -205,7 +205,7 @@ def plotFormationTimes(all_results, terrains, sigmas, plot_std_dev=True):
     fig.tight_layout()
     plt.show()
 
-folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10_preliminary"
+folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
 all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
-plotSuccesRates(all_results, terrains, sigmas)
-# plotFormationTimes(all_results, terrains, sigmas)
+# plotSuccesRates(all_results, terrains, sigmas)
+plotFormationTimes(all_results, terrains, sigmas)
