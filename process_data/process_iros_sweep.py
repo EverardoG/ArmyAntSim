@@ -246,7 +246,8 @@ def generateSigmaFigure():
     fig.subplots_adjust(left=0.04)
     return fig, axs
 
-folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
-all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
-fig, axs = generateSigmaFigure()
-plt.show()
+if __name__ == "__main__":
+    folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
+    all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
+    fig, axs = generateSigmaFigure()
+    plt.show()
