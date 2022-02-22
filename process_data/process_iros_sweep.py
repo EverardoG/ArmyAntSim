@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import argparse
 import pprint
 from typing import Optional, List
 import numpy as np
@@ -40,31 +41,32 @@ COLOR_CYCLE = plt.rcParams['axes.prop_cycle'].by_key()['color']
 # Set constants for labelling things
 FORMATION = 0
 TRAVEL = 1
+DISSOLUTION = 2
 
 STD_DEV = 0
 FULL_RANGE = 1
 NONE = 3
 
-def getTerrainSigma(ts_path: str):
+def getTerrainX(ts_path: str):
     terrain = ts_path.split("_")[0]
-    sigma = ts_path.split("_")[1]
-    return terrain, sigma
+    x = ts_path.split("_")[1]
+    return terrain, x
 
 def getAllResults(folder_path: Path, populate_robots_at_times = True):
-    terrain_sigma_paths = os.listdir(folder_path)
-    terrains = list({ts_path.split("_")[0] for ts_path in terrain_sigma_paths})
+    terrain_x_paths = os.listdir(folder_path)
+    terrains = list({ts_path.split("_")[0] for ts_path in terrain_x_paths})
     terrains.sort()
-    sigmas = list({ts_path.split("_")[1] for ts_path in terrain_sigma_paths})
-    sigmas.sort(key=lambda x:float(x))
+    xs = list({ts_path.split("_")[1] for ts_path in terrain_x_paths})
+    xs.sort(key=lambda x:float(x))
     all_results = {}
-    for ts_path in terrain_sigma_paths:
-        terrain, sigma = getTerrainSigma(ts_path)
-        all_results[(terrain, sigma)] = []
+    for ts_path in terrain_x_paths:
+        terrain, x = getTerrainX(ts_path)
+        all_results[(terrain, x)] = []
         for trial in os.listdir(folder_path + "/" + ts_path):
             full_trail_path = folder_path + "/" + ts_path + "/" + trial
             metrics = get_metrics_from_folder(Path(full_trail_path), populate_robots_at_times=populate_robots_at_times)
-            all_results[(terrain, sigma)].append(metrics)
-    return all_results, terrains, sigmas
+            all_results[(terrain, x)].append(metrics)
+    return all_results, terrains, xs
 
 def stylizePlot(ax, xlabels=Optional[List[float]]):
     # Setup xticks with labels
@@ -82,18 +84,22 @@ def stylizePlot(ax, xlabels=Optional[List[float]]):
     return None
 
 
-def calculateSuccessRates(all_results, terrains, sigmas, which):
-    # key is terrain. Value is a list of percentage formation success in order of sigmas
+def calculateSuccessRates(all_results, terrains, xs, which):
+    # key is terrain. Value is a list of percentage formation success in order of xs
     success_rates_dict = {}
 
     for terrain in terrains:
         success_rate_for_terrain = []
-        for sigma in sigmas:
-            trials_results = all_results[(terrain, sigma)]
+        for x in xs:
+            trials_results = all_results[(terrain, x)]
             if which == FORMATION:
                 times = [t["formation_time"] for t in trials_results]
             elif which == TRAVEL:
                 times = [t["travel_time"] for t in trials_results]
+            elif which == DISSOLUTION:
+                times = [t["dissolution_time"] for t in trials_results]
+            else:
+                raise Exception(f"Input for \"which\" is not valid: {which}")
             num_successful = [ft is not None and ft != 0.0 for ft in times]
             success_rate = sum(num_successful)/len(num_successful)
             success_rate_for_terrain.append(success_rate)
@@ -101,14 +107,14 @@ def calculateSuccessRates(all_results, terrains, sigmas, which):
 
     return success_rates_dict
 
-def plotSuccesRates(ax, all_results, terrains, sigmas, which):
+def plotSuccesRates(ax, all_results, terrains, xs, which):
     # Grab all the success rates
-    success_rates_dict = calculateSuccessRates(all_results, terrains, sigmas, which)
-    # Convert sigmas to floats
-    sigmas_f = [float(s) for s in sigmas]
+    success_rates_dict = calculateSuccessRates(all_results, terrains, xs, which)
+    # Convert xs to floats
+    xs_f = [float(x) for x in xs]
     # Plot the success rate for each terrain
     for terrain, c in zip(terrains, COLOR_CYCLE[:len(terrains)]):
-        ax.plot(sigmas_f, success_rates_dict[terrain],'.-', color=c, markersize=MARKER_SIZE)
+        ax.plot(xs_f, success_rates_dict[terrain],'.-', color=c, markersize=MARKER_SIZE)
     # Create a legend for the terrains
     custom_legend_handles = [Line2D([0],[0], color=c, marker='o', linestyle='', markersize=LEGEND_MARKER_SIZE) for c in COLOR_CYCLE[:len(terrains)]]
     terrain_legend = [TERRAIN_LABELS[terrain] for terrain in terrains]
@@ -118,18 +124,22 @@ def plotSuccesRates(ax, all_results, terrains, sigmas, which):
         ax.set_ylabel("Formation Sucess Rate")
     elif which == TRAVEL:
         ax.set_ylabel("Utility Sucess Rate")
+    elif which == DISSOLUTION:
+        ax.set_ylabel("Dissolution Success Rate")
+    else:
+        raise Exception(f"Input for \"which\" is not valid: {which}")
     ax.set_xlabel(r'$\sigma$'+" Noise (BL)")
     # Stylize plot so it looks nice
-    stylizePlot(ax, sigmas_f)
+    stylizePlot(ax, xs_f)
     return None
 
-def plotFormationSuccessRates(ax, all_results, terrains, sigmas):
+def plotSigmaFormationSuccessRates(ax, all_results, terrains, sigmas):
     return plotSuccesRates(ax, all_results, terrains, sigmas, FORMATION)
 
-def plotTravelSucessRates(ax, all_results, terrains, sigmas):
+def plotSigmaTravelSucessRates(ax, all_results, terrains, sigmas):
     return plotSuccesRates(ax, all_results, terrains, sigmas, TRAVEL)
 
-def calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which):
+def calculateMetricStatistics(all_results, terrains, xs, metric):
     # Key is terrain. Value is a list of times in order of sigmas
     averages = {}
     uppers = {}
@@ -143,16 +153,16 @@ def calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which):
         std_deviations_for_terrain = []
         for sigma in sigmas:
             trials_results = all_results[(terrain, sigma)]
-            if which == FORMATION:
-                times = [t["formation_time"] for t in trials_results]
-            elif which == TRAVEL:
-                times = [t["travel_time"] for t in trials_results]
-            valid_times = [t for t in times if t is not None and t != 0.0]
-            if len(valid_times) > 0:
-                averages_for_terrain.append(np.average(valid_times))
-                uppers_for_terrain.append(np.max(valid_times))
-                lowers_for_terrain.append(np.min(valid_times))
-                std_deviations_for_terrain.append(np.std(valid_times))
+            metric_results = [t[metric] for t in trials_results]
+            if len(metric.split("_")) >= 2 and metric.split("_")[1] == "time":
+                valid_metric_results = [t for t in metric_results if t is not None and t != 0.0]
+            else:
+                valid_metric_results = metric_results
+            if len(valid_metric_results) > 0:
+                averages_for_terrain.append(np.average(valid_metric_results))
+                uppers_for_terrain.append(np.max(valid_metric_results))
+                lowers_for_terrain.append(np.min(valid_metric_results))
+                std_deviations_for_terrain.append(np.std(valid_metric_results))
             else:
                 averages_for_terrain.append(None)
                 uppers_for_terrain.append(None)
@@ -164,6 +174,15 @@ def calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which):
         std_deviations[terrain] = std_deviations_for_terrain
 
     return averages, uppers, lowers, std_deviations
+
+def calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which):
+    # Key is terrain. Value is a list of times in order of sigmas
+    if which == FORMATION:
+        return calculateMetricStatistics(all_results, terrains, sigmas, "formation_time")
+    elif which == TRAVEL:
+        return calculateMetricStatistics(all_results, terrains, sigmas, "travel_time")
+    else:
+        raise Exception(f"Input for \"which\" is not valid: {which}")
 
 def combineValidFloats(list0: List[float], list1: List[float], addition = True):
     new_list = []
@@ -236,18 +255,38 @@ def plotFormationTimes(ax, all_results, terrains, sigmas, plot_range=STD_DEV):
 def plotTravelTimes(ax, all_results, terrains, sigmas, plot_range=STD_DEV):
     return plotTimeStatistics(ax, all_results, terrains, sigmas, TRAVEL, plot_range)
 
-def generateSigmaFigure():
+def generateSigmaFigure(all_results, terrains, sigmas):
     fig, axs = plt.subplots(1,4,dpi=100,figsize=(24,4))
-    plotFormationSuccessRates(axs[0], all_results, terrains, sigmas)
-    plotTravelSucessRates(axs[1],all_results, terrains, sigmas)
+    plotSigmaFormationSuccessRates(axs[0], all_results, terrains, sigmas)
+    plotSigmaTravelSucessRates(axs[1],all_results, terrains, sigmas)
     plotFormationTimes(axs[2], all_results, terrains, sigmas)
     plotTravelTimes(axs[3], all_results, terrains, sigmas)
     fig.tight_layout()
     fig.subplots_adjust(left=0.04)
     return fig, axs
 
+def plotTrafficNumRobotsFormation(all_results, terrains, traffics):
+    pass
+
+def generateTrafficFigure(all_results, terrains, traffics):
+    fig, axs = plt.subplots(1,3,dpi=100,figsize=(24,4))
+    plotTrafficNumRobotsFormation(axs[0], all_results, traffics)
+    return fig, axs
+
 if __name__ == "__main__":
-    folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
-    all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
-    fig, axs = generateSigmaFigure()
-    plt.show()
+    parser = argparse.ArgumentParser(description="Plot IROS results.")
+    parser.add_argument("-x","--sweep_variable", help="Which variable to plot the sweep for")
+    args = parser.parse_args()
+
+    if args.sweep_variable == "sigma":
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
+        all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
+        fig, axs = generateSigmaFigure(all_results, terrains, sigmas)
+        plt.show()
+    elif args.sweep_variable == "traffic":
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_traffic_6_to_12_preliminary"
+        all_results, terrains, traffics = getAllResults(folder_path, populate_robots_at_times=False)
+        fig, axs = generateTrafficFigure(all_results, terrains, traffics)
+        plt.show()
+    else:
+        print("Variable not found.")
