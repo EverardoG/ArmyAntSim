@@ -139,8 +139,33 @@ def plotSigmaFormationSuccessRates(ax, all_results, terrains, sigmas):
 def plotSigmaTravelSucessRates(ax, all_results, terrains, sigmas):
     return plotSuccesRates(ax, all_results, terrains, sigmas, TRAVEL)
 
+def filterOutInvalidResults(results, filter_None, filter_0):
+    valid_results = []
+    for r in results:
+        if r is None and filter_None:
+            pass
+        elif r == 0.0 and filter_0:
+            pass
+        else:
+            valid_results.append(r)
+    return valid_results
+
+def metricShouldBeFiltered(metric):
+    filter_None = False
+    filter_0 = False
+    if len(metric.split("_")) >= 2:
+        if metric.split("_")[1] == "time":
+            filter_None = True
+            filter_0 = True
+        elif metric.split("_")[0] == "num" and metric.split("_")[1] == "robots":
+            filter_None = True
+            filter_0 = True
+        elif metric == "percent_dissolution":
+            filter_None = True
+    return filter_None, filter_0
+
 def calculateMetricStatistics(all_results, terrains, xs, metric):
-    # Key is terrain. Value is a list of times in order of sigmas
+    # Key is terrain. Value is a list of times in order of xs
     averages = {}
     uppers = {}
     lowers = {}
@@ -151,13 +176,11 @@ def calculateMetricStatistics(all_results, terrains, xs, metric):
         uppers_for_terrain = []
         lowers_for_terrain = []
         std_deviations_for_terrain = []
-        for sigma in sigmas:
-            trials_results = all_results[(terrain, sigma)]
+        for x in xs:
+            trials_results = all_results[(terrain, x)]
             metric_results = [t[metric] for t in trials_results]
-            if len(metric.split("_")) >= 2 and metric.split("_")[1] == "time":
-                valid_metric_results = [t for t in metric_results if t is not None and t != 0.0]
-            else:
-                valid_metric_results = metric_results
+            filter_None, filter_0 = metricShouldBeFiltered(metric)
+            valid_metric_results = filterOutInvalidResults(metric_results, filter_None, filter_0)
             if len(valid_metric_results) > 0:
                 averages_for_terrain.append(np.average(valid_metric_results))
                 uppers_for_terrain.append(np.max(valid_metric_results))
@@ -175,7 +198,7 @@ def calculateMetricStatistics(all_results, terrains, xs, metric):
 
     return averages, uppers, lowers, std_deviations
 
-def calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which):
+def calculateTimeStatisitics(all_results, terrains, sigmas, which):
     # Key is terrain. Value is a list of times in order of sigmas
     if which == FORMATION:
         return calculateMetricStatistics(all_results, terrains, sigmas, "formation_time")
@@ -212,25 +235,25 @@ def getValidXs(xs: List[float], ys: List[float or None]):
             valid_xs.append(x)
     return valid_xs
 
-def plotTimeStatistics(ax, all_results, terrains, sigmas, which, plot_range):
-    # Grab all the formation times
-    averages, uppers, lowers, std_deviations = calculatePhaseTimeStatisitics(all_results, terrains, sigmas, which)
-    # Convert sigmas to floats
-    sigmas_f = [float(s) for s in sigmas]
-    # Plot the formation times for each terrain (Mean and standard deviation)
+def plotMetricStatistics(ax, all_results, terrains, xs, metric, x_name, plot_range):
+    # Grab all the metric results
+    averages, uppers, lowers, std_deviations = calculateMetricStatistics(all_results, terrains, xs, metric)
+    # Convert xs to floats
+    xs_f = [float(s) for s in xs]
+    # Plot the metric results for each terrain (Mean and standard deviation)
     for terrain, c in zip(terrains, COLOR_CYCLE[:len(terrains)]):
-        valid_sigmas = getValidXs(sigmas_f, averages[terrain])
+        valid_xs = getValidXs(xs_f, averages[terrain])
         avg = filterOutNone(averages[terrain])
-        ax.plot(valid_sigmas, avg, '.-', color=c, markersize=MARKER_SIZE)
+        ax.plot(valid_xs, avg, '.-', color=c, markersize=MARKER_SIZE)
         if plot_range == STD_DEV:
             std_dev = filterOutNone(std_deviations[terrain])
             upper_std_dev = np.array(avg) + np.array(std_dev)
             lower_std_dev = np.array(avg) - np.array(std_dev)
-            ax.fill_between(valid_sigmas,lower_std_dev,upper_std_dev,alpha=0.25)
+            ax.fill_between(valid_xs,lower_std_dev,upper_std_dev,alpha=0.25)
         elif plot_range == FULL_RANGE: # Plot upper and lower ranges if specified
             up = filterOutNone(uppers[terrain])
             low = filterOutNone(lowers[terrain])
-            ax.fill_between(valid_sigmas, up, low, alpha=0.2)
+            ax.fill_between(valid_xs, up, low, alpha=0.2)
         elif plot_range == NONE:
             pass
     # Create a legend for the terrains
@@ -238,16 +261,27 @@ def plotTimeStatistics(ax, all_results, terrains, sigmas, which, plot_range):
     terrain_legend = [TERRAIN_LABELS[terrain] for terrain in terrains]
     ax.legend(custom_legend_handles, terrain_legend)
     # Create labels for x and y
-    if which == FORMATION:
+    if metric == "formation_time":
         ax.set_ylabel("Formation Time (s)")
-    elif which == TRAVEL:
+    elif metric == "travel_time":
         ax.set_ylabel("Utility Time (s)")
-    ax.set_xlabel(r'$\sigma$'+" Noise (BL)")
+    elif metric == "num_robots_bridge_initial":
+        ax.set_ylabel("Robots in Initial Structure")
+    elif metric == "num_robots_bridge_final":
+        ax.set_ylabel("Robots in Final Structure")
+    ax.set_xlabel(x_name)
     # Set y limits to make plot more readable
-    ax.set_ylim([0,500])
+    if metric == "formation_time" or metric == "travel_time":
+        ax.set_ylim([0,500])
     # Stylize plot so it looks nice
-    stylizePlot(ax, sigmas_f)
+    stylizePlot(ax, xs_f)
     return None
+
+def plotTimeStatistics(ax, all_results, terrains, sigmas, which, plot_range):
+    if which == FORMATION:
+        return plotMetricStatistics(ax, all_results, terrains, sigmas, "formation_time",r'$\sigma$'+" Noise (BL)", plot_range)
+    elif which == TRAVEL:
+        return plotMetricStatistics(ax, all_results, terrains, sigmas, "travel_time",r'$\sigma$'+" Noise (BL)", plot_range)
 
 def plotFormationTimes(ax, all_results, terrains, sigmas, plot_range=STD_DEV):
     return plotTimeStatistics(ax, all_results, terrains, sigmas, FORMATION, plot_range)
@@ -265,12 +299,21 @@ def generateSigmaFigure(all_results, terrains, sigmas):
     fig.subplots_adjust(left=0.04)
     return fig, axs
 
-def plotTrafficNumRobotsFormation(all_results, terrains, traffics):
-    pass
+def plotTrafficNumRobotsFormation(ax, all_results, terrains, traffics):
+    return plotMetricStatistics(ax, all_results, terrains, traffics, "num_robots_bridge_initial", "Traffic level (robots/min)", STD_DEV)
+
+def plotTrafficNumRobotsTravel(ax, all_results, terrains, traffics):
+    return plotMetricStatistics(ax, all_results, terrains, traffics, "num_robots_bridge_final", "Traffic level (robots/min)", STD_DEV)
+
+def plotPercentDissolution(ax, all_results, terrains, traffics):
+    return plotMetricStatistics(ax, all_results, terrains, traffics, "percent_dissolution", "Traffic level (robots/min)", STD_DEV)
 
 def generateTrafficFigure(all_results, terrains, traffics):
     fig, axs = plt.subplots(1,3,dpi=100,figsize=(24,4))
-    plotTrafficNumRobotsFormation(axs[0], all_results, traffics)
+    plotTrafficNumRobotsFormation(axs[0], all_results, terrains, traffics)
+    plotTrafficNumRobotsTravel(axs[1], all_results, terrains, traffics)
+    plotPercentDissolution(axs[2], all_results, terrains, traffics)
+    fig.tight_layout()
     return fig, axs
 
 if __name__ == "__main__":

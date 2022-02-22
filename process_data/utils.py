@@ -336,6 +336,10 @@ def get_metrics_from_results_file(results_file: Path)->Dict:
                         num_robots_bridge_final = int(splitline[-1])
                 elif splitline[-1][:4] == "end:":
                     num_robots_bridge_end = int(splitline[-1][4:-1])
+    if formation_time == 0.0:
+        num_robots_bridge_initial = None
+    if travel_time == 0.0:
+        num_robots_bridge_final = None
     if num_robots_bridge_final is not None and num_robots_bridge_final > 0:
         percent_dissolution = 100*(num_robots_bridge_final-num_robots_bridge_end)/num_robots_bridge_final
     else:
