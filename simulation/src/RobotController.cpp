@@ -946,7 +946,7 @@ bool RobotController::robotPushing(Robot& r){
 
 bool RobotController::robotStacking(Robot* r, float posX){
 	float x=r->getBody()->GetPosition().x;
-	if(x < (m_robotParam.body_length + posX)){
+	if(x < (m_robotParam.body_length)){
 	// if(x<0.0){
 		return true;
 	}

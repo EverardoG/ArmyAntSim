@@ -107,7 +107,7 @@ def calculateSuccessRates(all_results, terrains, xs, which):
 
     return success_rates_dict
 
-def plotSuccesRates(ax, all_results, terrains, xs, which):
+def plotSuccesRates(ax, all_results, terrains, xs, which, x_name):
     # Grab all the success rates
     success_rates_dict = calculateSuccessRates(all_results, terrains, xs, which)
     # Convert xs to floats
@@ -128,7 +128,8 @@ def plotSuccesRates(ax, all_results, terrains, xs, which):
         ax.set_ylabel("Dissolution Success Rate")
     else:
         raise Exception(f"Input for \"which\" is not valid: {which}")
-    ax.set_xlabel(r'$\sigma$'+" Noise (BL)")
+    # ax.set_xlabel(r'$\sigma$'+" Noise (BL)")
+    ax.set_xlabel(x_name)
     # Stylize plot so it looks nice
     stylizePlot(ax, xs_f)
     return None
@@ -162,6 +163,9 @@ def metricShouldBeFiltered(metric):
             filter_0 = True
         elif metric == "percent_dissolution":
             filter_None = True
+        elif metric == "box_width" or metric == "box_height":
+            filter_None = True
+            filter_0 = True
     return filter_None, filter_0
 
 def calculateMetricStatistics(all_results, terrains, xs, metric):
@@ -266,38 +270,41 @@ def plotMetricStatistics(ax, all_results, terrains, xs, metric, x_name, plot_ran
     elif metric == "travel_time":
         ax.set_ylabel("Utility Time (s)")
     elif metric == "num_robots_bridge_initial":
-        ax.set_ylabel("Robots in Initial Structure")
+        ax.set_ylabel("Robots in Structure")
     elif metric == "num_robots_bridge_final":
         ax.set_ylabel("Robots in Final Structure")
+    elif metric == "box_width":
+        ax.set_ylabel("Structure Width (BL)")
+    elif metric == "box_height":
+        ax.set_ylabel("Structure Height (BL)")
+    elif metric == "percent_dissolution":
+        ax.set_ylabel("Percent Dissolution (%)")
     ax.set_xlabel(x_name)
     # Set y limits to make plot more readable
     if metric == "formation_time" or metric == "travel_time":
         ax.set_ylim([0,500])
+    elif metric == "percent_dissolution":
+        ax.set_ylim([0,105])
+    elif metric == "box_width" or metric == "box_height":
+        ax.set_ylim([0,10])
+    elif metric == "num_robots_bridge_initial":
+        ax.set_ylim([0,40])
+
     # Stylize plot so it looks nice
     stylizePlot(ax, xs_f)
     return None
 
-def plotTimeStatistics(ax, all_results, terrains, sigmas, which, plot_range):
+def plotTimeStatistics(ax, all_results, terrains, xs, x_name, which, plot_range):
     if which == FORMATION:
-        return plotMetricStatistics(ax, all_results, terrains, sigmas, "formation_time",r'$\sigma$'+" Noise (BL)", plot_range)
+        return plotMetricStatistics(ax, all_results, terrains, xs, "formation_time", x_name, plot_range)
     elif which == TRAVEL:
-        return plotMetricStatistics(ax, all_results, terrains, sigmas, "travel_time",r'$\sigma$'+" Noise (BL)", plot_range)
+        return plotMetricStatistics(ax, all_results, terrains, xs, "travel_time", x_name, plot_range)
 
-def plotFormationTimes(ax, all_results, terrains, sigmas, plot_range=STD_DEV):
-    return plotTimeStatistics(ax, all_results, terrains, sigmas, FORMATION, plot_range)
+def plotFormationTimes(ax, all_results, terrains, xs, x_name, plot_range=STD_DEV):
+    return plotTimeStatistics(ax, all_results, terrains, xs, x_name, FORMATION, plot_range)
 
-def plotTravelTimes(ax, all_results, terrains, sigmas, plot_range=STD_DEV):
-    return plotTimeStatistics(ax, all_results, terrains, sigmas, TRAVEL, plot_range)
-
-def generateSigmaFigure(all_results, terrains, sigmas):
-    fig, axs = plt.subplots(1,4,dpi=100,figsize=(24,4))
-    plotSigmaFormationSuccessRates(axs[0], all_results, terrains, sigmas)
-    plotSigmaTravelSucessRates(axs[1],all_results, terrains, sigmas)
-    plotFormationTimes(axs[2], all_results, terrains, sigmas)
-    plotTravelTimes(axs[3], all_results, terrains, sigmas)
-    fig.tight_layout()
-    fig.subplots_adjust(left=0.04)
-    return fig, axs
+def plotTravelTimes(ax, all_results, terrains, xs, x_name, plot_range=STD_DEV):
+    return plotTimeStatistics(ax, all_results, terrains, xs, x_name, TRAVEL, plot_range)
 
 def plotTrafficNumRobotsFormation(ax, all_results, terrains, traffics):
     return plotMetricStatistics(ax, all_results, terrains, traffics, "num_robots_bridge_initial", "Traffic level (robots/min)", STD_DEV)
@@ -308,12 +315,14 @@ def plotTrafficNumRobotsTravel(ax, all_results, terrains, traffics):
 def plotPercentDissolution(ax, all_results, terrains, traffics):
     return plotMetricStatistics(ax, all_results, terrains, traffics, "percent_dissolution", "Traffic level (robots/min)", STD_DEV)
 
-def generateTrafficFigure(all_results, terrains, traffics):
-    fig, axs = plt.subplots(1,3,dpi=100,figsize=(24,4))
-    plotTrafficNumRobotsFormation(axs[0], all_results, terrains, traffics)
-    plotTrafficNumRobotsTravel(axs[1], all_results, terrains, traffics)
-    plotPercentDissolution(axs[2], all_results, terrains, traffics)
+def generateQuadFigure(all_results, terrains, xs, x_name):
+    fig, axs = plt.subplots(1,4,dpi=100,figsize=(24,4))
+    plotSuccesRates(axs[0], all_results, terrains, xs, FORMATION, x_name)
+    plotFormationTimes(axs[1], all_results, terrains, xs, x_name)
+    plotMetricStatistics(axs[2], all_results, terrains, xs, "num_robots_bridge_initial", x_name, STD_DEV)
+    plotMetricStatistics(axs[3], all_results, terrains, xs, "percent_dissolution", x_name, STD_DEV)
     fig.tight_layout()
+    fig.subplots_adjust(left=0.04)
     return fig, axs
 
 if __name__ == "__main__":
@@ -324,12 +333,23 @@ if __name__ == "__main__":
     if args.sweep_variable == "sigma":
         folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_sigma_0_to_10"
         all_results, terrains, sigmas = getAllResults(folder_path, populate_robots_at_times=False)
-        fig, axs = generateSigmaFigure(all_results, terrains, sigmas)
+        fig, axs = generateQuadFigure(all_results, terrains, sigmas, r'$\sigma$'+" Noise (BL)")
+        plt.show()
+    elif args.sweep_variable == "robot_delay":
+        # folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_traffic_6_to_12_preliminary(sigma=0.5)"
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_robot_delay"
+        all_results, terrains, traffics = getAllResults(folder_path, populate_robots_at_times=False)
+        fig, axs = generateQuadFigure(all_results, terrains, traffics, "Spawn Delay (BL)")
         plt.show()
     elif args.sweep_variable == "traffic":
-        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_traffic_6_to_12_preliminary"
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_traffic_6_to_12_preliminary(sigma=0.5)"
         all_results, terrains, traffics = getAllResults(folder_path, populate_robots_at_times=False)
-        fig, axs = generateTrafficFigure(all_results, terrains, traffics)
+        fig, axs = generateQuadFigure(all_results, terrains, traffics, "Traffic (Robots/min)")
+        plt.show()
+    elif args.sweep_variable == "ks":
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_ks"
+        all_results, terrains, ks = getAllResults(folder_path, populate_robots_at_times=False)
+        fig, axs = generateQuadFigure(all_results, terrains, ks, r'$k$'+" (Gain)")
         plt.show()
     else:
-        print("Variable not found.")
+        raise Exception(f"{args.sweep_variable} is not a valid variable for plotting")

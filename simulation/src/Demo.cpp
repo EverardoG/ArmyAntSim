@@ -85,7 +85,7 @@ Demo::Demo(b2World* world, config::sConfig cfg){
 	else if (m_config.terrain.type == "terrace") {
 		m_terrain = new TerraceTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
 	}
-	else if (m_config.terrain.type == "step_down") {
+	else if (m_config.terrain.type == "stepdown") {
 		m_terrain = new StepDownTerrain(m_world, m_config.window, m_config.terrain, m_config.robot.body_length);
 	}
 	else if (m_config.terrain.type == "flat") {
@@ -595,7 +595,7 @@ void Demo::demoLoop(){
 				takeScreenshot();
 			}
 			// Switch to Dissolution once 10 robots have reached the goal
-			else if ( state == SimulationState::Travel && m_robotController.getNbRobotsReachedGoal() >= 10 ) {
+			else if ( state == SimulationState::Travel && m_robotController.getNbRobotsReachedGoal() >= 1 ) {
 				// Get the number of robots in the final bridge
 				m_nbRobotsInBridgeStateFinal = m_robotController.getNbRobots(BRIDGE);
 				m_nbRobotsInBridgeFinal = m_nbRobotsInBridgeStateFinal + m_robotController.getNbRobotsBlocked();
