@@ -4,7 +4,7 @@ StepDownTerrain::StepDownTerrain(b2World* world, config::sWindow windowParam, co
 : Terrain(world, windowParam, terrainParam, bodyLength){
 	// TODO Auto-generated constructor stub
 	m_M_TO_PX = m_windowSize.x /  25.0 * bodyLength;
-	m_posY = 5 * bodyLength;
+	m_posY = 2 * bodyLength;
 
 }
 

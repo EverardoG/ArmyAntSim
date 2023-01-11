@@ -1,0 +1,44 @@
+Simulation parameters: 
+	Delay between robots: 2.000000 s
+	World gravity: 9.800000
+	Max number of robots: 25
+	Distance between robots: 1.024634 body length
+	Phase shift between robots: 6.073746 rad
+	Initial x position of the first robot: 2.856000 m
+	Initial distance of the robot from the edge of the V: 5.200000 m
+	Bridge formation step duration: 0.000000 s
+
+  Bridge travel step duration: 0.000000 s
+
+	Bridge dissolution step duration: 0.000000 s
+
+	Simulation duration: 26.433335 s
+
+  Early termination flags:
+    m_stacking: 1
+    m_towering: 0
+    m_simulationStuck: 0
+    m_tooLongDissolution: 0
+
+Controller parameters: 
+	Angle limit before the robot is able to grab: 5.729578 deg
+	Delay in bridge state: 1.000000 s
+	Delay in walking state: 0.500000 s
+	Movement bridge_duration before the robot is considered to push: 1.000000 s
+	Max robot in the window: 50 s
+	Stability condition: 60.000000 s
+
+  Random Seed: 1
+
+
+Robot parameters: 
+	Robot body length 1.020000 m
+	Robot velocity 6.283185 rad/s
+
+No bridge has formed 
+
+Dissolution parameters: 
+	Bridge dissolution has not been reached 
+ 	Number of robots in the bridge: 12
+
+Rq: All distances are expressed in body length unit but coordinates are not. 

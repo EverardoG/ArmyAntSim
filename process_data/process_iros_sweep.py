@@ -130,6 +130,7 @@ def plotSuccesRates(ax, all_results, terrains, xs, which, x_name):
         raise Exception(f"Input for \"which\" is not valid: {which}")
     # ax.set_xlabel(r'$\sigma$'+" Noise (BL)")
     ax.set_xlabel(x_name)
+    ax.set_ylim([0,1.05])
     # Stylize plot so it looks nice
     stylizePlot(ax, xs_f)
     return None
@@ -337,7 +338,8 @@ if __name__ == "__main__":
         plt.show()
     elif args.sweep_variable == "robot_delay":
         # folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/sweep_iros_terrains_traffic_6_to_12_preliminary(sigma=0.5)"
-        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_robot_delay"
+        # folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_robot_delay"
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/1_robotdelays"
         all_results, terrains, traffics = getAllResults(folder_path, populate_robots_at_times=False)
         fig, axs = generateQuadFigure(all_results, terrains, traffics, "Spawn Delay (BL)")
         plt.show()
@@ -347,7 +349,8 @@ if __name__ == "__main__":
         fig, axs = generateQuadFigure(all_results, terrains, traffics, "Traffic (Robots/min)")
         plt.show()
     elif args.sweep_variable == "ks":
-        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_ks"
+        # folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/preliminary_ks"
+        folder_path = "/media/egonzalez/Extreme SSD/FlippybotsData/0_ks"
         all_results, terrains, ks = getAllResults(folder_path, populate_robots_at_times=False)
         fig, axs = generateQuadFigure(all_results, terrains, ks, r'$k$'+" (Gain)")
         plt.show()

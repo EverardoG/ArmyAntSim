@@ -575,7 +575,7 @@ void Demo::demoLoop(){
 		if ( m_config.simulation.smart_dissolution ) {
 			// std::cout << "Smart dissolution is on" << std::endl;
 			// Switch the state to Travel if one robot has reached the goal
-			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 1 ) {
+			if ( state == SimulationState::Formation && m_robotController.getNbRobotsReachedGoal() >= 20 ) {
 				// Get the number of robots in the initial bridge
 				m_nbRobotsInBridgeStateInitial = m_robotController.getNbRobots(BRIDGE);
 				m_nbRobotsInBridgeInitial = m_nbRobotsInBridgeStateInitial + m_robotController.getNbRobotsBlocked();

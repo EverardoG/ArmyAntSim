@@ -18,13 +18,18 @@ if args.sweep_variable == "sigma":
 elif args.sweep_variable == "robot_delay":
     # traffics = list(range(6,16,1))
     # traffics = [6, 8, 10, 12]
-    robot_delays = [1.5,5,10]
-    num_trials = 2
+    # robot_delays = [1.5,5,10]
+    # num_trials = 2
+    # 8 delays, 10 trials, 4 terrains, 320 experiments
+    robot_delays = [1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    num_trials = 10
 elif args.sweep_variable == "k":
-    ks = [10,20,40]
-    num_trials = 1
+    # 13 ks, 10 trials, 4 terrains, 520 experiments
+    # ks = [0.2, 0.4, 0.6, 0.8, 1.0,
+    ks = [2.5, 5.0, 7.5, 10.0, 12.5, 15.0, 17.5, 20.0]
+    num_trials = 10
 
-terrains = ["pit", "island", "terrace", "stepdown"]
+terrains = ["stepdown","pit", "island", "terrace"]
 
 # Set up the root directory for this experiment
 root_directory = ""
@@ -74,7 +79,7 @@ elif args.sweep_variable == "robot_delay":
                 command = "/home/egonzalez/ArmyAntSim/build/ArmyAntSim" # Built simulator to run
                 command += " -y " + terrain             # Which terrain to use
                 command += " --dynamic_speed 1"         # Turn dynamic flipping speed on
-                command += " --use_delay 0"             # Use distance delay between spawning robots
+                command += " --use_delay 0"             # Use BL delay between spawning robots
                 command += " --smart_dissolution 1"     # Use goal-based dissolution rules
                 command += " --robot_delay " + str(robot_delay)           # bl between spawning robots
                 command += " --gaussian_delay 0"        # Don't use gaussian delay for robot spawn delay
@@ -84,7 +89,7 @@ elif args.sweep_variable == "robot_delay":
                 command += " --p1 20"                   # Gain for robot control
                 command += " --rs " + str(random_seed)       # Random seed for random goal perturbation
                 command += " --torque 10"               # torque for flipping
-                command += " --sg 0.5"             # sigma value for noisy goal estimates
+                command += " --sg 1.0"             # sigma value for noisy goal estimates
                 command += " --bridge_delay 1.0"        # Delay in bridge state before going back to walking state
                 command += " --cp slowdown_away_from_goal"  # Control policy to use
                 command += " --max_dissolution_time " + str(60*20) # Give structures a maximum of 20 minutes to dissolve
@@ -101,17 +106,17 @@ elif args.sweep_variable == "k":
                 command = "/home/egonzalez/ArmyAntSim/build/ArmyAntSim" # Built simulator to run
                 command += " -y " + terrain             # Which terrain to use
                 command += " --dynamic_speed 1"         # Turn dynamic flipping speed on
-                command += " --use_delay 1"             # Use time delay between spawning robots
+                command += " --use_delay 0"             # Use BL delay between spawning robots
                 command += " --smart_dissolution 1"     # Use goal-based dissolution rules
-                command += " --robot_delay 8"           # seconds between spawning robots
-                command += " --gaussian_delay 0"        # Don't use gaussian delay for robot spawn delay
+                command += " --robot_delay 4"           # body-lengths between spawning robots
+                # command += " --gaussian_delay 0"        # Don't use gaussian delay for robot spawn delay
                 command += " --infinite_robots 1"       # Use however many robots are necessary for bridge formation
                 command += " --limit_angle 0.1"         # Set limit angle (radians) before robot is allowed to grab
                 command += " --enable_visualization 0"  # Turn off visualizer
                 command += " --p1 " +str(k)                   # Gain for robot control
                 command += " --rs " + str(random_seed)       # Random seed for random goal perturbation
                 command += " --torque 10"               # torque for flipping
-                command += " --sg 0.0"             # sigma value for noisy goal estimates
+                command += " --sg 1.0"             # sigma value for noisy goal estimates
                 command += " --bridge_delay 1.0"        # Delay in bridge state before going back to walking state
                 command += " --cp slowdown_away_from_goal"  # Control policy to use
                 command += " --max_dissolution_time " + str(60*20) # Give structures a maximum of 20 minutes to dissolve
@@ -120,9 +125,9 @@ elif args.sweep_variable == "k":
                 random_seed += 1                        # Increment random seed counter
 
 
-print(command_list)
+# print(command_list)
 # exit()
 # Execute the commands to run the sweep
-# for command in command_list:
-#     if (system(command) == 2):
-#         exit()
+for command in command_list:
+    if (system(command) == 2):
+        exit()
